@@ -1,0 +1,6 @@
+{
+  "name": "PowerSim: Interactive Inverter Visualizer",
+  "description": "Interactive power electronics inverter simulator with real-time circuit schematic conduction animation, PWM modulation schemes, and synchronized multi-channel oscilloscope waveforms.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
