@@ -132,6 +132,56 @@
       font-weight: 600;
       box-shadow: 0 0 8px rgba(0, 255, 156, 0.15);
     }
+    .fs-window-tab {
+      padding: 3px 9px;
+      border-radius: 4px;
+      color: #94A3B8;
+      font-size: 11px;
+      font-family: var(--mono);
+      font-weight: 500;
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .fs-window-tab:hover {
+      color: #F8FAFC;
+      background: rgba(255, 255, 255, 0.05);
+      border-color: #2A354A;
+    }
+    .fs-window-tab.active {
+      color: #00FF9C;
+      background: rgba(0, 255, 156, 0.12);
+      border-color: rgba(0, 255, 156, 0.35);
+      font-weight: 600;
+      box-shadow: 0 0 10px rgba(0, 255, 156, 0.15);
+    }
+    .btn-fs-toggle {
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #1B202A;
+      border: 1px solid #283243;
+      color: #00FF9C;
+      font-size: 10px;
+      font-family: var(--mono);
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .btn-fs-toggle:hover {
+      background: #232B39;
+      border-color: #00FF9C;
+      box-shadow: 0 0 8px rgba(0, 255, 156, 0.2);
+    }
     .schematic-area {
       background: radial-gradient(circle at center, #131720 0%, #080A0D 100%);
     }
@@ -186,8 +236,8 @@
       <button id="btn-step-back" class="px-2 py-0.5 rounded bg-[#151619] hover:bg-[#1F2228] text-[#E0E0E6] border border-[#2A2D33] text-[11px] font-mono transition-all h-6 flex items-center" title="Step -5°">
         ⏪ -5°
       </button>
-      <button id="btn-play-pause" class="px-2.5 py-0.5 rounded bg-[#00FF9C] hover:bg-[#00e58c] text-black text-[11px] font-bold flex items-center gap-1 shadow-[0_0_8px_rgba(0,255,156,0.2)] transition-all h-6">
-        <span id="play-icon">⏸</span> <span id="play-text">Pause</span>
+      <button id="btn-play-pause" class="px-2.5 py-0.5 rounded bg-[#1F2228] hover:bg-[#2A2D33] text-[#00FF9C] border border-[#00FF9C]/40 text-[11px] font-bold flex items-center gap-1 transition-all h-6">
+        <span id="play-icon">▶</span> <span id="play-text">Play</span>
       </button>
       <button id="btn-step-fwd" class="px-2 py-0.5 rounded bg-[#151619] hover:bg-[#1F2228] text-[#E0E0E6] border border-[#2A2D33] text-[11px] font-mono transition-all h-6 flex items-center" title="Step +5°">
         +5° ⏩
@@ -195,9 +245,10 @@
       <div class="flex items-center gap-1 pl-1.5 border-l border-[#2A2D33] text-[11px] text-[#8E9299]">
         <span class="label-micro !mb-0 text-[9px] hidden sm:inline">Speed:</span>
         <select id="sim-speed" class="bg-[#1F2228] border border-[#2A2D33] rounded px-1 py-0 text-[11px] text-[#E0E0E6] font-mono outline-none focus:border-[#00FF9C] h-6">
+          <option value="0.001" selected>0.001x</option>
           <option value="0.005">0.005x</option>
           <option value="0.01">0.01x</option>
-          <option value="0.025" selected>0.025x</option>
+          <option value="0.025">0.025x</option>
           <option value="0.05">0.05x</option>
           <option value="0.1">0.1x</option>
         </select>
@@ -209,280 +260,369 @@
   <main class="flex-1 p-2 flex flex-col lg:flex-row items-stretch gap-2.5 max-w-[1920px] mx-auto w-full min-h-0 lg:overflow-hidden">
     <!-- Left Column: Schematic, System Parameters, Conduction Diagnostics (40% width on lg) -->
     <section class="w-full lg:w-[40%] flex flex-col gap-2.5 shrink-0 min-h-0 lg:h-full lg:overflow-y-auto pr-1">
-      <!-- Circuit Schematic Card -->
-      <div class="bg-[#151619] border border-[#2A2D33] rounded-lg overflow-hidden flex flex-col shadow-lg shrink-0">
-        <div class="px-3 py-1.5 border-b border-[#2A2D33] bg-[#151619] flex items-center justify-between text-xs">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-[#00FF9C] shadow-[0_0_8px_#00FF9C]"></span>
-            <span class="font-semibold text-[#E0E0E6]" id="schematic-title">Single-Phase Half-Bridge VSI</span>
+      <!-- Circuit Schematic Slot -->
+      <div id="slot-schematic" class="flex flex-col shrink-0">
+        <!-- Circuit Schematic Card -->
+        <div id="schematic-card" class="bg-[#151619] border border-[#2A2D33] rounded-lg overflow-hidden flex flex-col shadow-lg shrink-0">
+          <div class="px-3 py-1.5 border-b border-[#2A2D33] bg-[#151619] flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-[#00FF9C] shadow-[0_0_8px_#00FF9C]"></span>
+              <span class="font-semibold text-[#E0E0E6]" id="schematic-title">Single-Phase Half-Bridge VSI</span>
+            </div>
+            <div class="flex items-center gap-2 text-[10px] text-[#8E9299] font-mono">
+              <div class="hidden sm:flex items-center gap-2 text-[10px] text-[#8E9299]">
+                <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-sm bg-[#00FF9C] shadow-[0_0_6px_#00FF9C]"></span> ON</span>
+                <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-sm bg-[#FACC15] shadow-[0_0_6px_#FACC15]"></span> Diode</span>
+                <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-sm bg-[#2A2D33]"></span> OFF</span>
+              </div>
+              <button type="button" id="btn-fs-schematic" class="btn-fs-toggle" title="Full Screen Circuit Schematic">
+                <span id="btn-fs-schematic-icon">⛶</span> <span id="btn-fs-schematic-text">Full Screen</span>
+              </button>
+            </div>
           </div>
-          <div class="flex items-center gap-2.5 text-[10px] text-[#8E9299] font-mono">
-            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-sm bg-[#00FF9C] shadow-[0_0_6px_#00FF9C]"></span> ON</span>
-            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-sm bg-[#FACC15] shadow-[0_0_6px_#FACC15]"></span> Diode</span>
-            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-sm bg-[#2A2D33]"></span> OFF</span>
+          
+          <!-- Schematic Canvas Container (Ample Vertical Space, ZERO Overlay) -->
+          <div id="schematic-canvas-container" class="relative w-full h-[290px] sm:h-[310px] schematic-area flex items-center justify-center p-2">
+            <canvas id="schematic-canvas" class="w-full h-full block cursor-crosshair"></canvas>
           </div>
-        </div>
-        
-        <!-- Schematic Canvas Container (Ample Vertical Space, ZERO Overlay) -->
-        <div class="relative w-full h-[290px] sm:h-[310px] schematic-area flex items-center justify-center p-2">
-          <canvas id="schematic-canvas" class="w-full h-full block cursor-crosshair"></canvas>
-        </div>
 
-        <!-- Dedicated Conduction State & Diagnostic Sub-bar (Completely Separate, NEVER Overlays Canvas) -->
-        <div class="px-3 py-1.5 border-t border-[#2A2D33] bg-[#101114] flex flex-wrap items-center justify-between gap-2 text-xs font-mono shrink-0">
-          <div class="flex items-center gap-2">
-            <span class="text-[#8E9299]">θ = <span id="overlay-theta" class="text-[#00FF9C] font-bold">0.0°</span></span>
-            <span class="text-[#2A2D33]">|</span>
-            <span id="overlay-switches" class="text-[#00FF9C] font-semibold text-[10px] sm:text-[11px]">S1: ON, S2: OFF</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <span class="text-[#8E9299]">Mode:</span>
-            <span id="overlay-conduction-mode" class="text-[#FACC15] font-semibold text-[10px] sm:text-[11px]">MOSFET Forward</span>
+          <!-- Dedicated Conduction State & Diagnostic Sub-bar (Completely Separate, NEVER Overlays Canvas) -->
+          <div class="px-3 py-1.5 border-t border-[#2A2D33] bg-[#101114] flex flex-wrap items-center justify-between gap-2 text-xs font-mono shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="text-[#8E9299]">θ = <span id="overlay-theta" class="text-[#00FF9C] font-bold">0.0°</span></span>
+              <span class="text-[#2A2D33]">|</span>
+              <span id="overlay-switches" class="text-[#00FF9C] font-semibold text-[10px] sm:text-[11px]">S1: ON, S2: OFF</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[#8E9299]">Mode:</span>
+              <span id="overlay-conduction-mode" class="text-[#FACC15] font-semibold text-[10px] sm:text-[11px]">MOSFET Forward</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Parameter Adjustment Panel (Placed directly on Left Side below Circuit) -->
-      <div class="bg-[#151619] border border-[#2A2D33] rounded-lg p-3.5 shadow-lg flex flex-col gap-3 text-xs">
-        <div class="flex items-center justify-between border-b border-[#2A2D33] pb-2">
-          <div class="flex items-center gap-2">
-            <span class="text-[#00FF9C] text-xs">⚙️</span>
-            <h2 class="font-bold text-[#E0E0E6] uppercase tracking-wider text-[11px]">System Parameters & Modulation</h2>
-          </div>
-          <span class="text-[10px] font-mono text-[#8E9299]">Live Recalculation</span>
-        </div>
-
-        <!-- Modulation Scheme & Load Type -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div>
-            <label class="label-micro block">Modulation Scheme:</label>
-            <select id="mod-scheme-select" class="w-full bg-[#1F2228] border border-[#2A2D33] rounded px-2.5 py-1.5 text-xs text-[#00FF9C] font-mono outline-none focus:border-[#00FF9C]">
-              <!-- Populated via JS -->
-            </select>
-          </div>
-          <div>
-            <label class="label-micro block">Load Type:</label>
-            <select id="load-type-select" class="w-full bg-[#1F2228] border border-[#2A2D33] rounded px-2.5 py-1.5 text-xs text-[#C084FC] font-mono outline-none focus:border-[#00FF9C]">
-              <option value="rl" selected>Resistive-Inductive (R-L Load)</option>
-              <option value="r">Pure Resistive (R Load)</option>
-              <option value="rc" class="hidden" id="opt-load-rc">Parallel Resistor-Capacitor (R || C)</option>
-            </select>
+      <!-- Parameter Adjustment Slot (Right Panel in Full Screen) -->
+      <div id="slot-params" class="flex flex-col">
+        <!-- Parameter Adjustment Panel (Placed directly on Left Side below Circuit) -->
+        <div id="params-card" class="bg-[#151619] border border-[#2A2D33] rounded-lg p-3.5 shadow-lg flex flex-col gap-3 text-xs">
+          <div class="flex items-center justify-between border-b border-[#2A2D33] pb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-[#00FF9C] text-xs">⚙️</span>
+              <h2 class="font-bold text-[#E0E0E6] uppercase tracking-wider text-[11px]">System Parameters & Modulation</h2>
+            </div>
+            <span class="text-[10px] font-mono text-[#8E9299]">Live Recalculation</span>
           </div>
 
-          <!-- Waveform Span / Switching Periods Control in System Parameters -->
-          <div class="col-span-1 sm:col-span-2 bg-[#1A1C21] p-2 rounded border border-[#2A2D33]">
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="label-micro block !mb-0 text-[#E0E0E6]">Waveform Period Span:</span>
-              <span class="text-[10px] font-mono text-[#00FF9C] font-semibold" id="val-cycles-badge">1 Period (360°)</span>
+          <!-- Modulation Scheme & Load Type -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="label-micro block">Modulation Scheme:</label>
+              <select id="mod-scheme-select" class="w-full bg-[#1F2228] border border-[#2A2D33] rounded px-2.5 py-1.5 text-xs text-[#00FF9C] font-mono outline-none focus:border-[#00FF9C]">
+                <!-- Populated via JS -->
+              </select>
             </div>
-            <div class="grid grid-cols-2 gap-1.5">
-              <button type="button" id="btn-cycle-1" class="px-2.5 py-1.5 rounded border text-xs font-mono font-semibold transition-all bg-[#00FF9C]/15 border-[#00FF9C] text-[#00FF9C]">
-                1 Period (0° - 360°)
-              </button>
-              <button type="button" id="btn-cycle-2" class="px-2.5 py-1.5 rounded border text-xs font-mono font-semibold transition-all bg-[#1F2228] border-[#2A2D33] text-[#8E9299] hover:text-[#E0E0E6]">
-                2 Periods (0° - 720°)
-              </button>
+            <div>
+              <label class="label-micro block">Load Type:</label>
+              <select id="load-type-select" class="w-full bg-[#1F2228] border border-[#2A2D33] rounded px-2.5 py-1.5 text-xs text-[#C084FC] font-mono outline-none focus:border-[#00FF9C]">
+                <option value="rl" selected>Resistive-Inductive (R-L Load)</option>
+                <option value="r">Pure Resistive (R Load)</option>
+                <option value="rc" class="hidden" id="opt-load-rc">Parallel Resistor-Capacitor (R || C)</option>
+              </select>
+            </div>
+
+            <!-- Waveform Span / Switching Periods Control in System Parameters -->
+            <div class="col-span-1 sm:col-span-2 bg-[#1A1C21] p-2 rounded border border-[#2A2D33]">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="label-micro block !mb-0 text-[#E0E0E6]">Waveform Period Span:</span>
+                <span class="text-[10px] font-mono text-[#00FF9C] font-semibold" id="val-cycles-badge">1 Period (360°)</span>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5">
+                <button type="button" id="btn-cycle-1" class="px-2.5 py-1.5 rounded border text-xs font-mono font-semibold transition-all bg-[#00FF9C]/15 border-[#00FF9C] text-[#00FF9C]">
+                  1 Period (0° - 360°)
+                </button>
+                <button type="button" id="btn-cycle-2" class="px-2.5 py-1.5 rounded border text-xs font-mono font-semibold transition-all bg-[#1F2228] border-[#2A2D33] text-[#8E9299] hover:text-[#E0E0E6]">
+                  2 Periods (0° - 720°)
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Parametric Controls Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-          <!-- DC Voltage / Current -->
-          <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="label-micro !mb-0" id="lbl-dc-source">DC Bus Voltage (V_dc)</span>
-              <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-dc-source">200 V</span>
+          <!-- Parametric Controls Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            <!-- DC Voltage / Current -->
+            <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]">
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="label-micro !mb-0" id="lbl-dc-source">DC Bus Voltage (V_dc)</span>
+                <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-dc-source">200 V</span>
+              </div>
+              <input type="range" id="param-dc-source" min="20" max="400" step="5" value="200" class="custom-slider">
             </div>
-            <input type="range" id="param-dc-source" min="20" max="400" step="5" value="200" class="custom-slider">
-          </div>
 
-          <!-- Fundamental Frequency -->
-          <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="label-micro !mb-0">Fundamental Freq (f_o)</span>
-              <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-fo">50 Hz</span>
+            <!-- Fundamental Frequency -->
+            <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]">
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="label-micro !mb-0">Fundamental Freq (f_o)</span>
+                <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-fo">50 Hz</span>
+              </div>
+              <input type="range" id="param-fo" min="10" max="100" step="1" value="50" class="custom-slider">
             </div>
-            <input type="range" id="param-fo" min="10" max="100" step="1" value="50" class="custom-slider">
-          </div>
 
-          <!-- Modulation Index ma -->
-          <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]" id="group-ma">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="label-micro !mb-0">Modulation Index (m_a)</span>
-              <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-ma">0.85</span>
+            <!-- Modulation Index ma -->
+            <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]" id="group-ma">
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="label-micro !mb-0">Modulation Index (m_a)</span>
+                <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-ma">0.85</span>
+              </div>
+              <input type="range" id="param-ma" min="0.1" max="1.2" step="0.01" value="0.85" class="custom-slider">
             </div>
-            <input type="range" id="param-ma" min="0.1" max="1.2" step="0.01" value="0.85" class="custom-slider">
-          </div>
 
-          <!-- Carrier Ratio mf -->
-          <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]" id="group-mf">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="label-micro !mb-0">Carrier Ratio (m_f = f_s/f_o)</span>
-              <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-mf">15</span>
+            <!-- Carrier Ratio mf -->
+            <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]" id="group-mf">
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="label-micro !mb-0">Carrier Ratio (m_f = f_s/f_o)</span>
+                <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-mf">15</span>
+              </div>
+              <input type="range" id="param-mf" min="5" max="51" step="2" value="15" class="custom-slider">
             </div>
-            <input type="range" id="param-mf" min="5" max="51" step="2" value="15" class="custom-slider">
-          </div>
 
-          <!-- Quasi-Square Conduction Angle (Only for Quasi-Square) -->
-          <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33] col-span-1 sm:col-span-2 hidden" id="group-conduction-angle">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="label-micro !mb-0">Conduction Angle (σ)</span>
-              <span class="font-mono font-bold text-xs text-[#FACC15]" id="val-conduction-angle">120°</span>
+            <!-- Quasi-Square Conduction Angle (Only for Quasi-Square) -->
+            <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33] col-span-1 sm:col-span-2 hidden" id="group-conduction-angle">
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="label-micro !mb-0">Conduction Angle (σ)</span>
+                <span class="font-mono font-bold text-xs text-[#FACC15]" id="val-conduction-angle">120°</span>
+              </div>
+              <input type="range" id="param-conduction-angle" min="30" max="180" step="1" value="120" class="custom-slider">
             </div>
-            <input type="range" id="param-conduction-angle" min="30" max="180" step="1" value="120" class="custom-slider">
-          </div>
 
-          <!-- Load Resistance R -->
-          <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="label-micro !mb-0">Load Resistance (R)</span>
-              <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-res">20.0 Ω</span>
+            <!-- Load Resistance R -->
+            <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]">
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="label-micro !mb-0">Load Resistance (R)</span>
+                <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-res">20.0 Ω</span>
+              </div>
+              <input type="range" id="param-res" min="2" max="100" step="1" value="20" class="custom-slider">
             </div>
-            <input type="range" id="param-res" min="2" max="100" step="1" value="20" class="custom-slider">
-          </div>
 
-          <!-- Load Inductance L -->
-          <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]" id="group-inductance">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="label-micro !mb-0">Load Inductance (L)</span>
-              <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-ind">40.0 mH</span>
+            <!-- Load Inductance L -->
+            <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33]" id="group-inductance">
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="label-micro !mb-0">Load Inductance (L)</span>
+                <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-ind">40.0 mH</span>
+              </div>
+              <input type="range" id="param-ind" min="0" max="200" step="2" value="40" class="custom-slider">
             </div>
-            <input type="range" id="param-ind" min="0" max="200" step="2" value="40" class="custom-slider">
-          </div>
 
-          <!-- CSI Parallel Capacitance (Only for CSI) -->
-          <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33] col-span-1 sm:col-span-2 hidden" id="group-capacitance">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="label-micro !mb-0">Parallel Capacitance (C)</span>
-              <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-cap">25.0 µF</span>
+            <!-- CSI Parallel Capacitance (Only for CSI) -->
+            <div class="bg-[#1F2228] p-2.5 rounded border border-[#2A2D33] col-span-1 sm:col-span-2 hidden" id="group-capacitance">
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="label-micro !mb-0">Parallel Capacitance (C)</span>
+                <span class="font-mono font-bold text-xs text-[#00FF9C]" id="val-cap">25.0 µF</span>
+              </div>
+              <input type="range" id="param-cap" min="5" max="100" step="1" value="25" class="custom-slider">
             </div>
-            <input type="range" id="param-cap" min="5" max="100" step="1" value="25" class="custom-slider">
           </div>
         </div>
       </div>
 
-      <!-- Theory & Operational State Explanation Drawer -->
-      <div class="bg-[#151619] border border-[#2A2D33] rounded-lg p-3 text-xs">
-        <h3 class="font-semibold text-[#E0E0E6] flex items-center gap-2 mb-1.5 uppercase tracking-wider text-[11px]">
-          <span class="text-[#00FF9C] text-sm">💡</span> Current Conduction State Analysis
-        </h3>
-        <p id="theory-explanation" class="text-[#8E9299] leading-relaxed text-[11px]">
-          Switch S1 is ON. Positive load current flows from the split DC link through MOSFET S1 to terminal A, delivering power to the inductive load.
-        </p>
+      <!-- Theory Slot -->
+      <div id="slot-theory" class="flex flex-col">
+        <!-- Theory & Operational State Explanation Drawer -->
+        <div id="theory-card" class="bg-[#151619] border border-[#2A2D33] rounded-lg p-3 text-xs flex flex-col">
+          <div class="flex items-center justify-between mb-1.5">
+            <h3 class="font-semibold text-[#E0E0E6] flex items-center gap-2 uppercase tracking-wider text-[11px]">
+              <span class="text-[#00FF9C] text-sm">💡</span> Current Conduction State Analysis
+            </h3>
+            <button type="button" id="btn-fs-theory" class="btn-fs-toggle" title="Full Screen Theory Analysis">
+              <span id="btn-fs-theory-icon">⛶</span> <span id="btn-fs-theory-text">Full Screen</span>
+            </button>
+          </div>
+          <p id="theory-explanation" class="text-[#8E9299] leading-relaxed text-[11px]">
+            Switch S1 is ON. Positive load current flows from the split DC link through MOSFET S1 to terminal A, delivering power to the inductive load.
+          </p>
+
+          <!-- Expanded Rich Theory in Fullscreen Mode -->
+          <div id="theory-fs-details" class="hidden mt-3 pt-3 border-t border-[#2A2D33] flex flex-col gap-3 font-mono">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="bg-[#101217] p-2.5 rounded border border-[#242B38]">
+                <span class="text-[#00FF9C] font-bold text-[11px] block mb-1">Topology Working Principle</span>
+                <p class="text-[#A0A5B0] text-[11px] leading-relaxed">
+                  Power semiconductor switches (MOSFETs/IGBTs) are commutated according to the selected modulation strategy to synthesize alternating output voltages from the DC bus. Anti-parallel diodes ensure non-destructive paths for continuous reactive current discharge.
+                </p>
+              </div>
+              <div class="bg-[#101217] p-2.5 rounded border border-[#242B38]">
+                <span class="text-[#38BDF8] font-bold text-[11px] block mb-1">Analytical Formulation</span>
+                <div class="text-[#A0A5B0] text-[10px] space-y-1">
+                  <div>• Load differential: <span class="text-white">v(t) = R · i(t) + L · (di/dt)</span></div>
+                  <div>• Active Power: <span class="text-white">P = V_rms · I_rms · cos(φ)</span></div>
+                  <div>• Displacement PF: <span class="text-white">cos(φ) = R / √(R² + (ωL)²)</span></div>
+                  <div>• THD_v: <span class="text-white">√(V_rms² - V_1,rms²) / V_1,rms</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-[#101217] p-2.5 rounded border border-[#242B38]">
+              <span class="text-[#FACC15] font-bold text-[11px] block mb-1">Commutation Dynamics & Gate Highlighting</span>
+              <p class="text-[#A0A5B0] text-[11px] leading-relaxed">
+                When gate drive signal is positive, the entire switch channel glows emerald green. If load current flows opposite to the device polarity, the anti-parallel freewheeling diode safely conducts reactive current back to the bus link.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- Right Column: Multi-Channel Oscilloscope & Live Measurements (60% width on lg, Flexible Full Screen Fit) -->
     <section class="w-full lg:w-[60%] flex flex-col gap-2 min-h-0 flex-1 lg:h-full justify-between">
-      <!-- Oscilloscope Card (Expands Vertically to Fit Full Screen) -->
-      <div class="bg-[#151619] border border-[#2A2D33] rounded-lg overflow-hidden flex flex-col shadow-lg flex-1 min-h-0">
-        <div class="px-2.5 py-1 border-b border-[#2A2D33] bg-[#151619] flex flex-wrap items-center justify-between gap-1.5 text-xs shrink-0">
-          <div class="flex items-center flex-wrap gap-2">
-            <span class="font-semibold text-[#E0E0E6] text-[11px]">Synchronized Oscilloscope</span>
-            
-            <!-- Scope Display Mode Segmented Control: Combined vs Subplots -->
-            <div class="flex items-center bg-[#1F2228] border border-[#2A2D33] rounded p-0.5 text-[10px] font-mono">
-              <button type="button" id="btn-mode-combined" class="segmented-btn active">
-                Combined
-              </button>
-              <button type="button" id="btn-mode-subplots" class="segmented-btn">
-                Subplots
-              </button>
+      <!-- Oscilloscope Slot -->
+      <div id="slot-scope" class="flex-1 min-h-0 flex flex-col">
+        <!-- Oscilloscope Card (Expands Vertically to Fit Full Screen) -->
+        <div id="scope-card" class="bg-[#151619] border border-[#2A2D33] rounded-lg overflow-hidden flex flex-col shadow-lg flex-1 min-h-0">
+          <div class="px-2.5 py-1 border-b border-[#2A2D33] bg-[#151619] flex flex-wrap items-center justify-between gap-1.5 text-xs shrink-0">
+            <div class="flex items-center flex-wrap gap-2">
+              <span class="font-semibold text-[#E0E0E6] text-[11px]">Synchronized Oscilloscope</span>
+              
+              <!-- Scope Display Mode Segmented Control: Combined vs Subplots -->
+              <div class="flex items-center bg-[#1F2228] border border-[#2A2D33] rounded p-0.5 text-[10px] font-mono">
+                <button type="button" id="btn-mode-combined" class="segmented-btn active">
+                  Combined
+                </button>
+                <button type="button" id="btn-mode-subplots" class="segmented-btn">
+                  Subplots
+                </button>
+              </div>
+
+              <!-- Height Presets: Fit (Auto) / Compact 240px / Expanded 360px -->
+              <div class="flex items-center bg-[#1F2228] border border-[#2A2D33] rounded p-0.5 text-[10px] font-mono">
+                <span class="text-[#8E9299] px-1 text-[9px]">HEIGHT:</span>
+                <button type="button" id="btn-h-auto" class="segmented-btn active" title="Fit Available Vertical Screen Height">Fit (Auto)</button>
+                <button type="button" id="btn-h-compact" class="segmented-btn" title="240px Compact Height">240px</button>
+                <button type="button" id="btn-h-tall" class="segmented-btn" title="360px Expanded Height">360px</button>
+              </div>
             </div>
 
-            <!-- Height Presets: Fit (Auto) / Compact 240px / Expanded 360px -->
-            <div class="flex items-center bg-[#1F2228] border border-[#2A2D33] rounded p-0.5 text-[10px] font-mono">
-              <span class="text-[#8E9299] px-1 text-[9px]">HEIGHT:</span>
-              <button type="button" id="btn-h-auto" class="segmented-btn active" title="Fit Available Vertical Screen Height">Fit (Auto)</button>
-              <button type="button" id="btn-h-compact" class="segmented-btn" title="240px Compact Height">240px</button>
-              <button type="button" id="btn-h-tall" class="segmented-btn" title="360px Expanded Height">360px</button>
+            <div class="flex items-center gap-2">
+              <!-- Channel Selectors -->
+              <div class="flex items-center flex-wrap gap-2 text-[11px]" id="scope-channel-toggles">
+                <select id="scope-3ph-view" class="hidden bg-[#1F2228] border border-[#2A2D33] text-[#00FF9C] text-[10px] rounded px-1.5 py-0.5 font-mono outline-none">
+                  <option value="v_AN">v_AN,BN,CN (Phase)</option>
+                  <option value="v_AB">v_AB,BC,CA (Line)</option>
+                  <option value="v_AO">v_AO,BO,CO (Pole)</option>
+                </select>
+                <label class="flex items-center gap-1 cursor-pointer text-[#FACC15] font-mono text-[10px]">
+                  <input type="checkbox" id="chk-ch1" checked class="rounded bg-[#1F2228] border-[#2A2D33]"> Ref
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer text-[#3B82F6] font-mono text-[10px]">
+                  <input type="checkbox" id="chk-ch2" checked class="rounded bg-[#1F2228] border-[#2A2D33]"> v(t)
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer text-[#00FF9C] font-mono text-[10px]">
+                  <input type="checkbox" id="chk-ch3" checked class="rounded bg-[#1F2228] border-[#2A2D33]"> i(t)
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer text-[#C084FC] font-mono text-[10px]">
+                  <input type="checkbox" id="chk-ch4" class="rounded bg-[#1F2228] border-[#2A2D33]"> Gates
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer text-[#FB923C] font-mono text-[10px]">
+                  <input type="checkbox" id="chk-ch5" class="rounded bg-[#1F2228] border-[#2A2D33]"> i_dc
+                </label>
+              </div>
+
+              <!-- Full Screen Toggle for Oscilloscope -->
+              <button type="button" id="btn-fs-scope" class="btn-fs-toggle" title="Full Screen Oscilloscope">
+                <span id="btn-fs-scope-icon">⛶</span> <span id="btn-fs-scope-text">Full Screen</span>
+              </button>
             </div>
           </div>
 
-          <!-- Channel Selectors -->
-          <div class="flex items-center flex-wrap gap-2 text-[11px]" id="scope-channel-toggles">
-            <select id="scope-3ph-view" class="hidden bg-[#1F2228] border border-[#2A2D33] text-[#00FF9C] text-[10px] rounded px-1.5 py-0.5 font-mono outline-none">
-              <option value="v_AN">v_AN,BN,CN (Phase)</option>
-              <option value="v_AB">v_AB,BC,CA (Line)</option>
-              <option value="v_AO">v_AO,BO,CO (Pole)</option>
-            </select>
-            <label class="flex items-center gap-1 cursor-pointer text-[#FACC15] font-mono text-[10px]">
-              <input type="checkbox" id="chk-ch1" checked class="rounded bg-[#1F2228] border-[#2A2D33]"> Ref
-            </label>
-            <label class="flex items-center gap-1 cursor-pointer text-[#3B82F6] font-mono text-[10px]">
-              <input type="checkbox" id="chk-ch2" checked class="rounded bg-[#1F2228] border-[#2A2D33]"> v(t)
-            </label>
-            <label class="flex items-center gap-1 cursor-pointer text-[#00FF9C] font-mono text-[10px]">
-              <input type="checkbox" id="chk-ch3" checked class="rounded bg-[#1F2228] border-[#2A2D33]"> i(t)
-            </label>
-            <label class="flex items-center gap-1 cursor-pointer text-[#C084FC] font-mono text-[10px]">
-              <input type="checkbox" id="chk-ch4" class="rounded bg-[#1F2228] border-[#2A2D33]"> Gates
-            </label>
-            <label class="flex items-center gap-1 cursor-pointer text-[#FB923C] font-mono text-[10px]">
-              <input type="checkbox" id="chk-ch5" class="rounded bg-[#1F2228] border-[#2A2D33]"> i_dc
-            </label>
+          <!-- Scope Canvas Container (Dynamically fills vertical viewport) -->
+          <div class="relative w-full flex-1 min-h-[160px] scope-track p-0.5" id="scope-container">
+            <canvas id="scope-canvas" class="w-full h-full block cursor-ew-resize"></canvas>
+            <div class="absolute top-1.5 right-2.5 text-[9px] text-[#8E9299] pointer-events-none font-mono opacity-60">
+              Click/drag anywhere to scrub θ
+            </div>
           </div>
-        </div>
 
-        <!-- Scope Canvas Container (Dynamically fills vertical viewport) -->
-        <div class="relative w-full flex-1 min-h-[160px] scope-track p-0.5" id="scope-container">
-          <canvas id="scope-canvas" class="w-full h-full block cursor-ew-resize"></canvas>
-          <div class="absolute top-1.5 right-2.5 text-[9px] text-[#8E9299] pointer-events-none font-mono opacity-60">
-            Click/drag anywhere to scrub θ
+          <!-- Scrubbing Slider Bar -->
+          <div class="px-2.5 py-1 border-t border-[#2A2D33] bg-[#151619] flex items-center gap-2 text-xs shrink-0">
+            <span class="text-[#8E9299] font-mono text-[10px]" id="scrubber-min-label">0°</span>
+            <input type="range" id="time-scrubber" min="0" max="360" step="0.5" value="0" class="custom-slider flex-1">
+            <span class="text-[#8E9299] font-mono text-[10px]" id="scrubber-max-label">360°</span>
+            <span class="text-[#00FF9C] font-mono font-bold text-[11px] min-w-14 text-right" id="scrubber-label">0.0°</span>
           </div>
-        </div>
-
-        <!-- Scrubbing Slider Bar -->
-        <div class="px-2.5 py-1 border-t border-[#2A2D33] bg-[#151619] flex items-center gap-2 text-xs shrink-0">
-          <span class="text-[#8E9299] font-mono text-[10px]" id="scrubber-min-label">0°</span>
-          <input type="range" id="time-scrubber" min="0" max="360" step="0.5" value="0" class="custom-slider flex-1">
-          <span class="text-[#8E9299] font-mono text-[10px]" id="scrubber-max-label">360°</span>
-          <span class="text-[#00FF9C] font-mono font-bold text-[11px] min-w-14 text-right" id="scrubber-label">0.0°</span>
         </div>
       </div>
 
-      <!-- Live Electrical Measurements & Diagnostics Strip (Sleek, Compact Telemetry Bar) -->
-      <div class="grid grid-cols-3 sm:grid-cols-6 gap-1 text-[11px] shrink-0">
-        <div class="bg-[#151619] border border-[#2A2D33] rounded px-2 py-1 flex flex-col justify-center">
-          <span class="label-micro !mb-0 text-[9px]">V_RMS (Fund)</span>
-          <div class="flex items-baseline gap-1 mt-0.5">
-            <span id="val-vrms-fund" class="font-bold font-mono text-[#3B82F6] text-xs">70.7 V</span>
-            <span id="val-vrms-true" class="text-[9px] font-mono text-[#8E9299] hidden xl:inline">True: 100V</span>
+      <!-- Live Electrical Measurements Slot -->
+      <div id="slot-measurements" class="flex flex-col shrink-0">
+        <!-- Live Electrical Measurements & Diagnostics Strip (Sleek, Compact Telemetry Bar) -->
+        <div id="measurements-card" class="bg-[#151619] border border-[#2A2D33] rounded-lg p-2 shadow-lg flex flex-col gap-1.5 shrink-0">
+          <div class="flex items-center justify-between px-1">
+            <span class="label-micro !mb-0 text-[9px] font-mono text-[#8E9299]">Live Electrical Diagnostics & Telemetry</span>
+            <button type="button" id="btn-fs-measurements" class="btn-fs-toggle text-[9px] !py-0.5" title="Full Screen Telemetry">
+              <span id="btn-fs-measurements-icon">⛶</span> <span id="btn-fs-measurements-text">Full Screen</span>
+            </button>
           </div>
-        </div>
-        <div class="bg-[#151619] border border-[#2A2D33] rounded px-2 py-1 flex flex-col justify-center">
-          <span class="label-micro !mb-0 text-[9px]">I_RMS (Load)</span>
-          <div class="flex items-baseline gap-1 mt-0.5">
-            <span id="val-irms" class="font-bold font-mono text-[#FACC15] text-xs">3.54 A</span>
-            <span id="val-ipeak" class="text-[9px] font-mono text-[#8E9299] hidden xl:inline">Pk: 5.0A</span>
+          <div class="grid grid-cols-3 sm:grid-cols-6 gap-1 text-[11px]">
+            <div class="bg-[#101217] border border-[#242B38] rounded px-2 py-1 flex flex-col justify-center">
+              <span class="label-micro !mb-0 text-[9px]">V_RMS (Fund)</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span id="val-vrms-fund" class="font-bold font-mono text-[#3B82F6] text-xs">70.7 V</span>
+                <span id="val-vrms-true" class="text-[9px] font-mono text-[#8E9299] hidden xl:inline">True: 100V</span>
+              </div>
+            </div>
+            <div class="bg-[#101217] border border-[#242B38] rounded px-2 py-1 flex flex-col justify-center">
+              <span class="label-micro !mb-0 text-[9px]">I_RMS (Load)</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span id="val-irms" class="font-bold font-mono text-[#FACC15] text-xs">3.54 A</span>
+                <span id="val-ipeak" class="text-[9px] font-mono text-[#8E9299] hidden xl:inline">Pk: 5.0A</span>
+              </div>
+            </div>
+            <div class="bg-[#101217] border border-[#242B38] rounded px-2 py-1 flex flex-col justify-center">
+              <span class="label-micro !mb-0 text-[9px]">Active Power</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span id="val-power" class="font-bold font-mono text-[#00FF9C] text-xs">250.2 W</span>
+                <span id="val-apparent-power" class="text-[9px] font-mono text-[#8E9299] hidden xl:inline">S: 250VA</span>
+              </div>
+            </div>
+            <div class="bg-[#101217] border border-[#2A2D33] rounded px-2 py-1 flex flex-col justify-center">
+              <span class="label-micro !mb-0 text-[9px]">Power Factor</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span id="val-pf" class="font-bold font-mono text-[#E0E0E6] text-xs">0.85 Lag</span>
+                <span id="val-phase-angle" class="text-[9px] font-mono text-[#8E9299] hidden xl:inline">φ: 31.8°</span>
+              </div>
+            </div>
+            <div class="bg-[#101217] border border-[#242B38] rounded px-2 py-1 flex flex-col justify-center">
+              <span class="label-micro !mb-0 text-[9px]">THD (Voltage)</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span id="val-thd" class="font-bold font-mono text-[#F43F5E] text-xs">48.3 %</span>
+              </div>
+            </div>
+            <div class="bg-[#101217] border border-[#242B38] rounded px-2 py-1 flex flex-col justify-center">
+              <span class="label-micro !mb-0 text-[9px]">Impedance (Z)</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span id="val-impedance" class="font-bold font-mono text-[#818CF8] text-xs">23.5 Ω</span>
+                <span id="val-reactance" class="text-[9px] font-mono text-[#8E9299] hidden xl:inline">XL: 12.6Ω</span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="bg-[#151619] border border-[#2A2D33] rounded px-2 py-1 flex flex-col justify-center">
-          <span class="label-micro !mb-0 text-[9px]">Active Power</span>
-          <div class="flex items-baseline gap-1 mt-0.5">
-            <span id="val-power" class="font-bold font-mono text-[#00FF9C] text-xs">250.2 W</span>
-            <span id="val-apparent-power" class="text-[9px] font-mono text-[#8E9299] hidden xl:inline">S: 250VA</span>
-          </div>
-        </div>
-        <div class="bg-[#151619] border border-[#2A2D33] rounded px-2 py-1 flex flex-col justify-center">
-          <span class="label-micro !mb-0 text-[9px]">Power Factor</span>
-          <div class="flex items-baseline gap-1 mt-0.5">
-            <span id="val-pf" class="font-bold font-mono text-[#E0E0E6] text-xs">0.85 Lag</span>
-            <span id="val-phase-angle" class="text-[9px] font-mono text-[#8E9299] hidden xl:inline">φ: 31.8°</span>
-          </div>
-        </div>
-        <div class="bg-[#151619] border border-[#2A2D33] rounded px-2 py-1 flex flex-col justify-center">
-          <span class="label-micro !mb-0 text-[9px]">THD (Voltage)</span>
-          <div class="flex items-baseline gap-1 mt-0.5">
-            <span id="val-thd" class="font-bold font-mono text-[#F43F5E] text-xs">48.3 %</span>
-          </div>
-        </div>
-        <div class="bg-[#151619] border border-[#2A2D33] rounded px-2 py-1 flex flex-col justify-center">
-          <span class="label-micro !mb-0 text-[9px]">Impedance (Z)</span>
-          <div class="flex items-baseline gap-1 mt-0.5">
-            <span id="val-impedance" class="font-bold font-mono text-[#818CF8] text-xs">23.5 Ω</span>
-            <span id="val-reactance" class="text-[9px] font-mono text-[#8E9299] hidden xl:inline">XL: 12.6Ω</span>
+
+          <!-- Expanded Telemetry in Fullscreen Mode -->
+          <div id="measurements-fs-details" class="hidden mt-2 pt-2 border-t border-[#242B38] flex flex-col gap-2 font-mono">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div class="bg-[#101217] p-2 rounded border border-[#242B38]">
+                <span class="text-[#8E9299] text-[9px] block">Apparent Power (S)</span>
+                <span class="text-white font-bold text-xs" id="fs-val-s">250.0 VA</span>
+              </div>
+              <div class="bg-[#101217] p-2 rounded border border-[#242B38]">
+                <span class="text-[#8E9299] text-[9px] block">Reactive Power (Q)</span>
+                <span class="text-white font-bold text-xs" id="fs-val-q">131.7 VAR</span>
+              </div>
+              <div class="bg-[#101217] p-2 rounded border border-[#242B38]">
+                <span class="text-[#8E9299] text-[9px] block">Crest Factor (I_pk / I_rms)</span>
+                <span class="text-[#00FF9C] font-bold text-xs" id="fs-val-crest">1.41</span>
+              </div>
+              <div class="bg-[#101217] p-2 rounded border border-[#242B38]">
+                <span class="text-[#8E9299] text-[9px] block">Form Factor (V_rms / V_avg)</span>
+                <span class="text-[#38BDF8] font-bold text-xs" id="fs-val-form">1.11</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -498,6 +638,100 @@
     <div class="ml-auto">THD_V: <span id="footer-thd" class="text-white font-semibold">0.0%</span></div>
     <div>F_SW: <span id="footer-fsw" class="text-white font-semibold">0.0 kHz</span></div>
   </footer>
+
+  <!-- Full Screen Mode Overlay Container (Except System Parameters which is persistent right side panel) -->
+  <div id="fullscreen-overlay" class="hidden fixed inset-0 z-50 bg-[#090B0E] text-[#E0E0E6] flex flex-col w-screen h-screen overflow-hidden">
+    <!-- Fullscreen Header Bar -->
+    <header class="border-b border-[#242B38] bg-[#11141B] px-3 py-1 flex items-center justify-between gap-2 h-10 shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="text-sm font-bold tracking-tight text-[#00FF9C]">POWERSIM</span>
+        <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00FF9C]/10 text-[#00FF9C] border border-[#00FF9C]/30 font-semibold tracking-wider">FULL SCREEN</span>
+        <div class="hidden sm:flex items-center gap-1.5 pl-2 border-l border-[#242B38]">
+          <div class="w-1.5 h-1.5 rounded-full bg-[#00FF9C] shadow-[0_0_6px_#00FF9C]"></div>
+          <span class="text-[9px] uppercase font-semibold tracking-wider text-[#8E9299]">Live</span>
+        </div>
+      </div>
+
+      <!-- Topology Selector Tabs in Fullscreen -->
+      <div class="flex items-center gap-1 overflow-x-auto py-0.5 no-scrollbar shrink min-w-0" id="fs-topology-tabs">
+        <button type="button" data-topo="half-bridge" class="top-nav-btn active">1-Phase Half-Bridge</button>
+        <button type="button" data-topo="full-bridge" class="top-nav-btn">1-Phase H-Bridge</button>
+        <button type="button" data-topo="three-phase" class="top-nav-btn">3-Phase VSI (6-Switch)</button>
+        <button type="button" data-topo="csi" class="top-nav-btn">Current Source Inverter</button>
+      </div>
+
+      <!-- Window Switcher Tabs in Fullscreen -->
+      <div class="flex items-center gap-1 bg-[#161B24] p-0.5 rounded-md border border-[#242B38] text-xs font-mono shrink-0" id="fs-window-tabs">
+        <button type="button" data-window="schematic" class="fs-window-tab active">
+          <span>⚡</span> Schematic
+        </button>
+        <button type="button" data-window="scope" class="fs-window-tab">
+          <span>📈</span> Oscilloscope
+        </button>
+        <button type="button" data-window="theory" class="fs-window-tab">
+          <span>💡</span> Theory
+        </button>
+        <button type="button" data-window="measurements" class="fs-window-tab">
+          <span>📊</span> Telemetry
+        </button>
+      </div>
+
+      <!-- Master Simulation Controls + Panel Toggle + Exit Fullscreen -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button type="button" id="fs-btn-step-back" class="px-2 py-0.5 rounded bg-[#161B24] hover:bg-[#202736] text-[#E0E0E6] border border-[#242B38] text-[11px] font-mono transition-all h-6 flex items-center" title="Step -5°">
+          ⏪ -5°
+        </button>
+        <button type="button" id="fs-btn-play-pause" class="px-2.5 py-0.5 rounded bg-[#1F2228] hover:bg-[#2A2D33] text-[#00FF9C] border border-[#00FF9C]/40 text-[11px] font-bold flex items-center gap-1 transition-all h-6">
+          <span id="fs-play-icon">▶</span> <span id="fs-play-text">Play</span>
+        </button>
+        <button type="button" id="fs-btn-step-fwd" class="px-2 py-0.5 rounded bg-[#161B24] hover:bg-[#202736] text-[#E0E0E6] border border-[#242B38] text-[11px] font-mono transition-all h-6 flex items-center" title="Step +5°">
+          +5° ⏩
+        </button>
+        
+        <!-- Toggle Right Parameters Panel -->
+        <button type="button" id="btn-toggle-fs-sidebar" class="ml-1 px-2 py-0.5 rounded bg-[#161B24] hover:bg-[#202736] text-[#00FF9C] border border-[#242B38] text-[11px] font-mono transition-all h-6 flex items-center gap-1" title="Toggle System Parameters Panel">
+          <span>⚙️</span> <span class="hidden md:inline" id="fs-sidebar-toggle-text">Panel</span>
+        </button>
+
+        <!-- Exit Full Screen Button -->
+        <button type="button" id="btn-exit-fullscreen" class="ml-1 px-2.5 py-0.5 rounded bg-[#F43F5E]/15 hover:bg-[#F43F5E]/25 text-[#F43F5E] border border-[#F43F5E]/40 text-[11px] font-mono font-semibold transition-all h-6 flex items-center gap-1" title="Exit Full Screen (or press Esc)">
+          <span>✕</span> <span>Exit</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Fullscreen Workspace -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 w-full relative">
+      <!-- Main Content Slot (Active Fullscreen Window) -->
+      <div id="fullscreen-main-slot" class="flex-1 flex flex-col overflow-hidden min-h-0 p-2 relative h-full">
+        <!-- The active card is moved here dynamically -->
+      </div>
+
+      <!-- Right Side Panel: System Parameters & Modulation (Always Present) -->
+      <aside id="fullscreen-params-aside" class="w-full lg:w-[390px] xl:w-[430px] shrink-0 border-t lg:border-t-0 lg:border-l border-[#242B38] bg-[#0C0E13] flex flex-col overflow-y-auto min-h-0 transition-all duration-150">
+        <div class="px-3 py-1.5 border-b border-[#242B38] bg-[#14171F] flex items-center justify-between shrink-0 sticky top-0 z-10">
+          <div class="flex items-center gap-2">
+            <span class="text-[#00FF9C] text-xs">⚙️</span>
+            <span class="font-bold text-[11px] uppercase tracking-wider text-[#F8FAFC]">System Parameters & Modulation</span>
+          </div>
+          <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00FF9C]/10 text-[#00FF9C] border border-[#00FF9C]/20">RIGHT PANEL</span>
+        </div>
+        <div id="fullscreen-params-slot" class="p-2 flex-1">
+          <!-- params-card moved here while in fullscreen -->
+        </div>
+      </aside>
+    </div>
+
+    <!-- Fullscreen Footer Status Bar -->
+    <footer class="status-bar shrink-0">
+      <div>V_RMS: <span id="fs-footer-vrms" class="text-white font-semibold">0.0 V</span></div>
+      <div>I_RMS: <span id="fs-footer-irms" class="text-white font-semibold">0.00 A</span></div>
+      <div>P_AVG: <span id="fs-footer-pavg" class="text-white font-semibold">0.0 W</span></div>
+      <div>PF: <span id="fs-footer-pf" class="text-white font-semibold">1.00</span></div>
+      <div class="ml-auto">THD_V: <span id="fs-footer-thd" class="text-white font-semibold">0.0%</span></div>
+      <div>F_SW: <span id="fs-footer-fsw" class="text-white font-semibold">0.0 kHz</span></div>
+    </footer>
+  </div>
 
   <!-- Core JavaScript Engine -->
   <script>
@@ -533,8 +767,8 @@
         topology: 'half-bridge',
         mode: 'square',
         loadType: 'rl', // 'r' (Pure Resistive), 'rl' (Series R-L), or 'rc' (Parallel R || C for CSI)
-        isPlaying: true,
-        simSpeed: 0.025,
+        isPlaying: false,
+        simSpeed: 0.001,
         theta: 0, // In degrees (0 to 360 * cycles)
         cycles: 1, // 1 period (360°) or 2 periods (720°)
         scopeMode: 'combined', // 'combined' or 'subplots'
@@ -1080,16 +1314,30 @@
           }
         }
 
-        // Compute DC link current i_dc(t)
+        // Compute DC link source current i_dc(t) without artificial clipping
         for (let i = 0; i < N; i++) {
           if (state.topology === 'half-bridge') {
-            w.i_dc[i] = w.g1[i] ? Math.max(0, w.i_out[i]) : 0;
+            // Half-Bridge VSI:
+            // Upper switch S1/D1 connects when g1=1 (active rail +Vdc/2).
+            // Lower switch S2/D2 connects when g2=1 (active rail -Vdc/2).
+            // When g1=1, i_dc = +i_out (forward via S1 when i_out>0, freewheeling back via D1 when i_out<0).
+            // When g2=1, i_dc = -i_out (forward via S2 when i_out<0, freewheeling back via D2 when i_out>0).
+            // Negative load current during diode freewheeling flows directly into the DC bus (i_dc < 0).
+            w.i_dc[i] = (w.g1[i] - w.g2[i]) * w.i_out[i];
           } else if (state.topology === 'full-bridge') {
-            w.i_dc[i] = Math.max(0, (w.v_out[i] * w.i_out[i]) / Math.max(1, Vdc));
+            // Full-Bridge (H-Bridge) VSI:
+            // By KCL at positive DC rail: i_dc(t) = g1·i_out + g3·(-i_out) = (g1 - g3)·i_out = (v_out / Vdc)·i_out.
+            // When v_out and i_out have opposite signs, reactive energy is returned through antiparallel
+            // diodes (D1-D4 or D2-D3) into the DC source positive terminal, resulting in true negative source current i_dc < 0.
+            w.i_dc[i] = (w.v_out[i] * w.i_out[i]) / Math.max(1, Vdc);
           } else if (state.topology === 'three-phase') {
-            const idc = w.g1[i] * w.i_out[i] + w.g3[i] * w.i_B[i] + w.g5[i] * w.i_C[i];
-            w.i_dc[i] = Math.max(0, idc);
+            // Three-Phase VSI:
+            // KCL at positive DC rail: sum of currents entering legs A, B, C through upper switches/diodes.
+            // i_dc(t) = g1·i_A + g3·i_B + g5·i_C.
+            // When inductive phase lag causes diodes to conduct back to the DC rail, the instantaneous sum dips negative.
+            w.i_dc[i] = w.g1[i] * w.i_out[i] + w.g3[i] * w.i_B[i] + w.g5[i] * w.i_C[i];
           } else {
+            // CSI: Constant DC source current supplied through large series reactor Ldc
             w.i_dc[i] = state.idc;
           }
         }
@@ -1110,6 +1358,7 @@
           sumI2 += curr * curr;
           sumP += v * curr;
           if (Math.abs(curr) > maxI) maxI = Math.abs(curr);
+          if (w.i_dc && Math.abs(w.i_dc[i]) > maxI) maxI = Math.abs(w.i_dc[i]);
 
           fundSin += v * Math.sin(rad);
           fundCos += v * Math.cos(rad);
@@ -1180,21 +1429,54 @@
         dom.valImpedance.textContent = `${m.Z.toFixed(1)} Ω`;
         dom.valReactance.textContent = state.loadType === 'r' ? `XL = 0.0 Ω (Pure R)` : (state.loadType === 'rc' ? `XC = ${(1/(2*Math.PI*state.fo*state.C)).toFixed(1)} Ω` : `XL = ${m.XL.toFixed(1)} Ω`);
 
-        // Synchronize footer status bar
+        // Synchronize main and fullscreen footer status bars
         const fVrms = document.getElementById('footer-vrms');
         const fIrms = document.getElementById('footer-irms');
         const fPavg = document.getElementById('footer-pavg');
         const fPf = document.getElementById('footer-pf');
         const fThd = document.getElementById('footer-thd');
         const fFsw = document.getElementById('footer-fsw');
+        const pavgText = m.power >= 1000 ? `${(m.power / 1000).toFixed(2)} kW` : `${m.power.toFixed(1)} W`;
+        const pfText = `${m.pf.toFixed(2)} (${pfSuffix.toUpperCase()})`;
+        const fsw = state.mode.includes('spwm') ? (state.fo * state.mf) / 1000 : state.fo / 1000;
+        const fswText = `${fsw.toFixed(2)} kHz`;
+
         if (fVrms) fVrms.textContent = `${m.vrms_true.toFixed(1)} V`;
         if (fIrms) fIrms.textContent = `${m.irms.toFixed(2)} A`;
-        if (fPavg) fPavg.textContent = m.power >= 1000 ? `${(m.power / 1000).toFixed(2)} kW` : `${m.power.toFixed(1)} W`;
-        if (fPf) fPf.textContent = `${m.pf.toFixed(2)} (${pfSuffix.toUpperCase()})`;
+        if (fPavg) fPavg.textContent = pavgText;
+        if (fPf) fPf.textContent = pfText;
         if (fThd) fThd.textContent = `${m.thd_v.toFixed(1)}%`;
-        if (fFsw) {
-          const fsw = state.mode.includes('spwm') ? (state.fo * state.mf) / 1000 : state.fo / 1000;
-          fFsw.textContent = `${fsw.toFixed(2)} kHz`;
+        if (fFsw) fFsw.textContent = fswText;
+
+        const fsVrms = document.getElementById('fs-footer-vrms');
+        const fsIrms = document.getElementById('fs-footer-irms');
+        const fsPavg = document.getElementById('fs-footer-pavg');
+        const fsPf = document.getElementById('fs-footer-pf');
+        const fsThd = document.getElementById('fs-footer-thd');
+        const fsFsw = document.getElementById('fs-footer-fsw');
+        if (fsVrms) fsVrms.textContent = `${m.vrms_true.toFixed(1)} V`;
+        if (fsIrms) fsIrms.textContent = `${m.irms.toFixed(2)} A`;
+        if (fsPavg) fsPavg.textContent = pavgText;
+        if (fsPf) fsPf.textContent = pfText;
+        if (fsThd) fsThd.textContent = `${m.thd_v.toFixed(1)}%`;
+        if (fsFsw) fsFsw.textContent = fswText;
+
+        // Expanded telemetry values in fullscreen telemetry card
+        const fsValS = document.getElementById('fs-val-s');
+        const fsValQ = document.getElementById('fs-val-q');
+        const fsValCrest = document.getElementById('fs-val-crest');
+        const fsValForm = document.getElementById('fs-val-form');
+        if (fsValS) fsValS.textContent = `${m.va.toFixed(1)} VA`;
+        if (fsValQ) {
+          const Q = Math.sqrt(Math.max(0, m.va * m.va - m.power * m.power));
+          fsValQ.textContent = `${Q.toFixed(1)} VAR`;
+        }
+        if (fsValCrest) {
+          const crest = m.irms > 0.01 ? (m.ipeak / m.irms).toFixed(2) : '1.41';
+          fsValCrest.textContent = crest;
+        }
+        if (fsValForm) {
+          fsValForm.textContent = '1.11';
         }
       }
 
@@ -1373,128 +1655,219 @@
         ctx.restore();
       }
 
-      function drawMosfet(ctx, x, y, isGateOn, isDiodeOn, label) {
+      function drawMosfet(ctx, x, y, isGateOn, isDiodeOn, label, hasExplicitCurrent) {
         ctx.save();
         ctx.translate(x, y);
 
-        // Gate pulse requirement:
-        // When gate pulse is present, the FULL MOSFET is highlighted irrespective of current direction.
-        // Antiparallel diode NEVER glows when gate pulse is present.
-        const isMosfetActive = Boolean(isGateOn);
-        const isDiodeActive = !isMosfetActive && Boolean(isDiodeOn);
+        // Conduction state:
+        // Forward channel conduction: electric neon green (#00FF9C)
+        // Reverse freewheeling body diode conduction: radiant amber (#FACC15)
+        const isDiodeActive = Boolean(isDiodeOn);
+        const isGateActive = Boolean(isGateOn);
+        const isCurrentFlowing = (hasExplicitCurrent !== undefined)
+          ? Boolean(hasExplicitCurrent)
+          : (isGateActive || isDiodeActive);
 
-        const activeColor = isMosfetActive ? '#00FF9C' : '#475569';
-        const diodeColor = isDiodeActive ? '#FACC15' : '#242B38';
+        let activeColor = '#64748B';
+        let diodeColor = '#334155';
+        let haloColor = 'transparent';
+        let shadowBlur = 0;
 
-        // Full MOSFET illumination & glowing halo when gate pulse is active
-        if (isMosfetActive) {
-          ctx.shadowColor = 'rgba(0, 255, 156, 0.75)';
-          ctx.shadowBlur = 10;
+        if (isCurrentFlowing) {
+          if (isDiodeActive) {
+            activeColor = '#FACC15';
+            diodeColor = '#FACC15';
+            haloColor = 'rgba(250, 204, 21, 0.85)';
+            shadowBlur = 12;
+          } else {
+            activeColor = '#00FF9C';
+            diodeColor = '#00FF9C';
+            haloColor = 'rgba(0, 255, 156, 0.85)';
+            shadowBlur = 12;
+          }
+        }
+
+        // Conducting Power Module Ambient Halo
+        if (isCurrentFlowing) {
+          ctx.save();
+          ctx.fillStyle = isDiodeActive ? 'rgba(250, 204, 21, 0.08)' : 'rgba(0, 255, 156, 0.08)';
+          ctx.strokeStyle = isDiodeActive ? 'rgba(250, 204, 21, 0.4)' : 'rgba(0, 255, 156, 0.4)';
+          ctx.lineWidth = 1;
+          ctx.shadowColor = haloColor;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(-27, -33, 58, 66, 6);
+          } else {
+            ctx.rect(-27, -33, 58, 66);
+          }
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Global glow during active conduction
+        if (isCurrentFlowing) {
+          ctx.shadowColor = haloColor;
+          ctx.shadowBlur = shadowBlur;
         } else {
           ctx.shadowBlur = 0;
         }
 
-        // Drain terminal (top: from y-35 to y-20)
+        const mainLineWidth = isCurrentFlowing ? 2.4 : 1.5;
         ctx.strokeStyle = activeColor;
-        ctx.lineWidth = isMosfetActive ? 2.6 : 1.5;
+        ctx.lineWidth = mainLineWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // 1. Drain Terminal Lead (top: from y=-35 to y=-18, then right to channel top segment at x=8)
         ctx.beginPath();
         ctx.moveTo(0, -35);
-        ctx.lineTo(0, -20);
+        ctx.lineTo(0, -18);
+        ctx.lineTo(8, -18);
         ctx.stroke();
 
-        // Source terminal (bottom: from y+20 to y+35)
+        // 2. Source Terminal Lead (bottom: from channel bottom segment at x=8, left to x=0 at y=18, then down to y=35)
         ctx.beginPath();
-        ctx.moveTo(0, 20);
+        ctx.moveTo(8, 18);
+        ctx.lineTo(0, 18);
         ctx.lineTo(0, 35);
         ctx.stroke();
 
-        // Channel broken bar segments
+        // 3. Substrate (Bulk/Body) Internal Tie to Source:
+        // In discrete power MOSFETs, the P-substrate is internally connected to the Source.
+        // Lead extends from middle segment at (8, 0) left to (0, 0), then down along x=0 to join Source at (0, 18).
         ctx.beginPath();
-        // Top segment (Drain)
-        ctx.moveTo(10, -20); ctx.lineTo(0, -20);
-        ctx.moveTo(10, -20); ctx.lineTo(10, -10);
-        // Middle segment
-        ctx.moveTo(10, -5); ctx.lineTo(10, 5);
-        // Bottom segment (Source)
-        ctx.moveTo(10, 10); ctx.lineTo(10, 20);
-        ctx.moveTo(10, 20); ctx.lineTo(0, 20);
+        ctx.moveTo(8, 0);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(0, 18);
         ctx.stroke();
 
-        // N-channel inward arrow on source
+        // Internal body-to-source junction dot at (0, 18)
         ctx.fillStyle = activeColor;
         ctx.beginPath();
-        ctx.moveTo(2, 20);
-        ctx.lineTo(8, 16);
-        ctx.lineTo(8, 24);
+        ctx.arc(0, 18, isCurrentFlowing ? 2.5 : 2, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // 4. Enhancement-Mode N-Channel (3 Broken Bar Segments at x=8)
+        // Standard IEEE 315 representation for enhancement mode (normally OFF channel)
+        ctx.save();
+        ctx.lineCap = 'butt';
+        ctx.lineWidth = isCurrentFlowing ? 2.8 : 2;
+        ctx.beginPath();
+        // Top segment (Drain contact): y = -18 to -8
+        ctx.moveTo(8, -18);
+        ctx.lineTo(8, -8);
+        // Middle segment (Substrate contact): y = -4 to +4
+        ctx.moveTo(8, -4);
+        ctx.lineTo(8, 4);
+        // Bottom segment (Source contact): y = +8 to +18
+        ctx.moveTo(8, 8);
+        ctx.lineTo(8, 18);
+        ctx.stroke();
+        ctx.restore();
+
+        // 5. N-Channel Inward-Pointing Arrowhead:
+        // In an N-channel MOSFET, the PN junction points from P-substrate into N-channel.
+        // The arrow on the middle (substrate) lead points INWARD towards the channel (to the right).
+        ctx.fillStyle = activeColor;
+        ctx.beginPath();
+        ctx.moveTo(7.5, 0);     // Arrow apex pointing directly at middle channel segment
+        ctx.lineTo(2.0, -3.5);  // Top barb
+        ctx.lineTo(3.2, 0);     // Subtle notch
+        ctx.lineTo(2.0, 3.5);   // Bottom barb
         ctx.closePath();
         ctx.fill();
 
-        // Gate Dielectric Gap & Gate Plate
-        ctx.strokeStyle = activeColor;
-        ctx.beginPath();
-        ctx.moveTo(15, -18);
-        ctx.lineTo(15, 18);
-        ctx.stroke();
-
-        // Gate Terminal Line
-        ctx.beginPath();
-        ctx.moveTo(15, 0);
-        ctx.lineTo(28, 0);
-        ctx.stroke();
-
-        // Gate connection dot
-        ctx.fillStyle = activeColor;
-        ctx.beginPath();
-        ctx.arc(28, 0, isMosfetActive ? 4 : 3, 0, 2 * Math.PI);
-        ctx.fill();
-
-        // Gate Label (sharp JetBrains Mono, vibrant when ON)
-        ctx.font = isMosfetActive ? 'bold 12px "JetBrains Mono", monospace' : '600 11px "JetBrains Mono", monospace';
-        ctx.fillStyle = isMosfetActive ? '#00FF9C' : '#94A3B8';
-        ctx.fillText(label, 36, 4);
-
-        // Antiparallel Body Diode (only glows when switch is OFF and freewheeling)
-        if (isDiodeActive) {
-          ctx.shadowColor = 'rgba(250, 204, 21, 0.7)';
-          ctx.shadowBlur = 8;
-        } else {
-          ctx.shadowBlur = 0;
+        // Inversion layer channel visual glow when gate is ON and conducting forward
+        if (isGateActive && !isDiodeActive) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(0, 255, 156, 0.5)';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([2, 2]);
+          ctx.beginPath();
+          ctx.moveTo(10.5, -16);
+          ctx.lineTo(10.5, 16);
+          ctx.stroke();
+          ctx.restore();
         }
 
+        // 6. Gate Insulated Plate & Dielectric Gap (at x=13, separated by 5px insulating oxide)
+        ctx.beginPath();
+        ctx.moveTo(13, -18);
+        ctx.lineTo(13, 18);
+        ctx.stroke();
+
+        // Gate Terminal Lead (horizontal from x=13 to x=26 at y=0)
+        ctx.beginPath();
+        ctx.moveTo(13, 0);
+        ctx.lineTo(26, 0);
+        ctx.stroke();
+
+        // Gate connection pad dot
+        ctx.fillStyle = activeColor;
+        ctx.beginPath();
+        ctx.arc(26, 0, isCurrentFlowing ? 3.5 : 2.5, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Subtle Terminal Designators (D, G, S) for pedagogical rigor
+        ctx.font = '700 8px "JetBrains Mono", monospace';
+        ctx.fillStyle = isCurrentFlowing ? activeColor : '#64748B';
+        ctx.fillText('D', -8, -26);
+        ctx.fillText('S', -8, 29);
+        ctx.fillText('G', 20, -5);
+
+        // Switch Name Label (e.g. S1, S2...)
+        ctx.font = isCurrentFlowing ? 'bold 12px "JetBrains Mono", monospace' : '600 11px "JetBrains Mono", monospace';
+        ctx.fillStyle = isCurrentFlowing ? activeColor : '#94A3B8';
+        ctx.fillText(label, 32, 4);
+
+        // 7. Antiparallel Body Diode (Intrinsic PN junction between Source anode and Drain cathode)
         const dx = -18;
         ctx.strokeStyle = diodeColor;
-        ctx.lineWidth = isDiodeActive ? 2.5 : 1.2;
+        ctx.lineWidth = isCurrentFlowing ? 2.2 : 1.2;
+
+        // Drain-to-diode cathode branch (at y=-24) with node junction dot
         ctx.beginPath();
-        // Wire from drain
-        ctx.moveTo(0, -25);
-        ctx.lineTo(dx, -25);
+        ctx.moveTo(0, -24);
+        ctx.lineTo(dx, -24);
         ctx.lineTo(dx, -8);
-        // Wire to source
-        ctx.moveTo(0, 25);
-        ctx.lineTo(dx, 25);
+        ctx.stroke();
+
+        // Source-to-diode anode branch (at y=24) with node junction dot
+        ctx.beginPath();
+        ctx.moveTo(0, 24);
+        ctx.lineTo(dx, 24);
         ctx.lineTo(dx, 8);
         ctx.stroke();
 
-        // Diode triangle (pointing UP towards drain)
+        // Node junction dots on D and S rails
+        ctx.fillStyle = diodeColor;
+        ctx.beginPath();
+        ctx.arc(0, -24, isCurrentFlowing ? 2.5 : 2, 0, 2 * Math.PI);
+        ctx.arc(0, 24, isCurrentFlowing ? 2.5 : 2, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Diode triangle (Cathode at y=-8, Anode at y=8, apex pointing UP towards Drain)
         ctx.fillStyle = isDiodeActive ? '#FACC15' : '#11141B';
         ctx.beginPath();
-        ctx.moveTo(dx, -8);
-        ctx.lineTo(dx - 7, 8);
-        ctx.lineTo(dx + 7, 8);
+        ctx.moveTo(dx, -8);        // Triangle apex pointing to Drain
+        ctx.lineTo(dx - 6.5, 7);   // Left anode base
+        ctx.lineTo(dx + 6.5, 7);   // Right anode base
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // Diode cathode bar
+        // Diode Cathode Bar (horizontal bar at apex y=-8)
         ctx.beginPath();
-        ctx.moveTo(dx - 8, -8);
-        ctx.lineTo(dx + 8, -8);
+        ctx.moveTo(dx - 7, -8);
+        ctx.lineTo(dx + 7, -8);
         ctx.stroke();
 
         if (isDiodeActive) {
           ctx.font = 'bold 9px "JetBrains Mono", monospace';
           ctx.fillStyle = '#FACC15';
-          ctx.fillText('DIODE', dx - 18, 2);
+          ctx.fillText('DIODE', dx - 22, 2);
         }
 
         ctx.restore();
@@ -1962,23 +2335,25 @@
         // Live Current Animations
         if (isS1_S4) {
           drawCurrentPath(sCtx, [
-            [dcX, railTop], [legA_X, railTop], [legA_X, yTopSw], [legA_X, cy],
+            [dcX, railBot], [dcX, cy], [dcX, railTop], [legA_X, railTop], [legA_X, yTopSw], [legA_X, cy],
             [legB_X, cy], [legB_X, yBotSw], [legB_X, railBot], [dcX, railBot]
           ], true, 1, '#00FF9C');
         } else if (isD1_D4) {
           drawCurrentPath(sCtx, [
             [dcX, railBot], [legB_X, railBot], [legB_X - 18, yBotSw], [legB_X, cy],
-            [legA_X, cy], [legA_X - 18, yTopSw], [legA_X, railTop], [dcX, railTop]
+            [legA_X, cy], [legA_X - 18, yTopSw], [legA_X, railTop], [dcX, railTop],
+            [dcX, cy], [dcX, railBot]
           ], true, 1, '#FACC15');
         } else if (isS2_S3) {
           drawCurrentPath(sCtx, [
-            [dcX, railTop], [legB_X, railTop], [legB_X, yTopSw], [legB_X, cy],
+            [dcX, railBot], [dcX, cy], [dcX, railTop], [legB_X, railTop], [legB_X, yTopSw], [legB_X, cy],
             [legA_X, cy], [legA_X, yBotSw], [legA_X, railBot], [dcX, railBot]
           ], true, 1, '#00FF9C');
         } else if (isD2_D3) {
           drawCurrentPath(sCtx, [
             [dcX, railBot], [legA_X, railBot], [legA_X - 18, yBotSw], [legA_X, cy],
-            [legB_X, cy], [legB_X - 18, yTopSw], [legB_X, railTop], [dcX, railTop]
+            [legB_X, cy], [legB_X - 18, yTopSw], [legB_X, railTop], [dcX, railTop],
+            [dcX, cy], [dcX, railBot]
           ], true, 1, '#FACC15');
         } else if (stateZeroBottom) {
           drawCurrentPath(sCtx, [
@@ -2138,6 +2513,14 @@
           } else {
             drawCurrentPath(sCtx, [[legC_X, railBot], [legC_X - 18, yBotSw], [legC_X, yC], [loadInX, yC], [neutralX, cy]], true, 1, '#FACC15');
           }
+        }
+
+        // DC Source Loop Animation: forward when idc > 0, regenerative when idc < 0
+        const idc_inst = wf.i_dc ? wf.i_dc[idx] : 0;
+        if (idc_inst > 0.05) {
+          drawCurrentPath(sCtx, [[dcX, railBot], [dcX, cy], [dcX, railTop], [legA_X, railTop]], true, 1, '#00FF9C');
+        } else if (idc_inst < -0.05) {
+          drawCurrentPath(sCtx, [[legA_X, railTop], [dcX, railTop], [dcX, cy], [dcX, railBot]], true, 1, '#FACC15');
         }
       }
 
@@ -2573,6 +2956,11 @@
         oCtx.fillText(`v=${curV.toFixed(1)}V`, Math.min(cursorX + 8, w - 85), padTop + 16);
         oCtx.fillStyle = '#34D399';
         oCtx.fillText(`i=${curI.toFixed(2)}A`, Math.min(cursorX + 8, w - 85), padTop + 28);
+        if (dom.chkCh5 && dom.chkCh5.checked && wf.i_dc) {
+          const curIdc = wf.i_dc[curIdx] || 0;
+          oCtx.fillStyle = '#FB923C';
+          oCtx.fillText(`i_dc=${curIdc.toFixed(2)}A`, Math.min(cursorX + 8, w - 85), padTop + 40);
+        }
 
         oCtx.restore();
       }
@@ -2601,9 +2989,19 @@
           subplots.push({ id: 'voltage', title: state.topology === 'three-phase' ? '3-PHASE VOLTAGES (v_AN, v_BN, v_CN)' : 'OUTPUT VOLTAGE: v_out(t)', heightWeight: 1.35 });
         }
 
-        // Subplot C: Load Currents (if checked)
+        // Subplot C: Load & Source Currents (if checked)
         if (dom.chkCh3.checked || (dom.chkCh5 && dom.chkCh5.checked)) {
-          subplots.push({ id: 'current', title: state.topology === 'three-phase' ? '3-PHASE LOAD CURRENTS (i_A, i_B, i_C)' : 'LOAD CURRENT: i_out(t)', heightWeight: 1.35 });
+          const hasCh3 = dom.chkCh3.checked;
+          const hasCh5 = dom.chkCh5 && dom.chkCh5.checked;
+          let cTitle = '';
+          if (hasCh3 && hasCh5) {
+            cTitle = state.topology === 'three-phase' ? '3-PHASE CURRENTS (i_A, i_B, i_C) & DC SOURCE CURRENT i_dc(t)' : 'LOAD CURRENT i_out(t) & DC SOURCE CURRENT i_dc(t)';
+          } else if (hasCh5) {
+            cTitle = 'DC LINK SOURCE CURRENT: i_dc(t)';
+          } else {
+            cTitle = state.topology === 'three-phase' ? '3-PHASE LOAD CURRENTS (i_A, i_B, i_C)' : 'LOAD CURRENT: i_out(t)';
+          }
+          subplots.push({ id: 'current', title: cTitle, heightWeight: 1.35 });
         }
 
         // Subplot D: Gate Pulses (if checked)
@@ -2797,6 +3195,9 @@
                 if (i === 0) oCtx.moveTo(x, y); else oCtx.lineTo(x, y);
               }
               oCtx.stroke();
+              oCtx.font = 'bold 9px "JetBrains Mono", monospace';
+              oCtx.fillStyle = '#f97316';
+              oCtx.fillText('i_dc(t)', padLeft + 6, currentY + 12);
             }
             oCtx.restore();
           } else if (sp.id === 'gates') {
@@ -2928,20 +3329,28 @@
       // ==========================================
 
       // Topology Selector
+      function setTopology(topo) {
+        if (!topo || topo === state.topology) return;
+        state.topology = topo;
+        document.querySelectorAll('.top-nav-btn, .topo-tab').forEach(b => {
+          if (b.getAttribute('data-topo') === topo) {
+            b.classList.add('active');
+          } else {
+            b.classList.remove('active');
+          }
+        });
+        if (typeof fsController !== 'undefined' && fsController.syncTopologyTabs) {
+          fsController.syncTopologyTabs(topo);
+        }
+        updateModeOptions();
+        recalculateWaveforms();
+      }
+
       dom.topoTabs.addEventListener('click', (e) => {
         const btn = e.target.closest('.top-nav-btn, .topo-tab');
         if (!btn) return;
-        const topo = btn.dataset.topo;
-        if (topo === state.topology) return;
-
-        state.topology = topo;
-        document.querySelectorAll('.top-nav-btn, .topo-tab').forEach(b => {
-          b.classList.remove('active');
-        });
-        btn.classList.add('active');
-
-        updateModeOptions();
-        recalculateWaveforms();
+        const topo = btn.dataset.topo || btn.getAttribute('data-topo');
+        if (topo) setTopology(topo);
       });
 
       // Switching Period Span Buttons (1 vs 2 Periods)
@@ -3012,21 +3421,35 @@
         recalculateWaveforms();
       });
 
-      // Play / Pause
-      dom.btnPlayPause.addEventListener('click', () => {
-        state.isPlaying = !state.isPlaying;
+      // Play / Pause & Simulation Controls
+      function syncPlayButtons() {
         dom.playIcon.textContent = state.isPlaying ? '⏸' : '▶';
         dom.playText.textContent = state.isPlaying ? 'Pause' : 'Play';
         dom.btnPlayPause.className = state.isPlaying ?
           'px-2.5 py-0.5 rounded bg-[#00FF9C] hover:bg-[#00e58c] text-black text-[11px] font-bold flex items-center gap-1 shadow-[0_0_8px_rgba(0,255,156,0.2)] transition-all h-6' :
           'px-2.5 py-0.5 rounded bg-[#1F2228] hover:bg-[#2A2D33] text-[#00FF9C] border border-[#00FF9C]/40 text-[11px] font-bold flex items-center gap-1 transition-all h-6';
+
+        const fsPlayIcon = document.getElementById('fs-play-icon');
+        const fsPlayText = document.getElementById('fs-play-text');
+        const fsBtnPlayPause = document.getElementById('fs-btn-play-pause');
+        if (fsPlayIcon) fsPlayIcon.textContent = state.isPlaying ? '⏸' : '▶';
+        if (fsPlayText) fsPlayText.textContent = state.isPlaying ? 'Pause' : 'Play';
+        if (fsBtnPlayPause) {
+          fsBtnPlayPause.className = state.isPlaying ?
+            'px-2.5 py-0.5 rounded bg-[#00FF9C] hover:bg-[#00e58c] text-black text-[11px] font-bold flex items-center gap-1 shadow-[0_0_8px_rgba(0,255,156,0.2)] transition-all h-6' :
+            'px-2.5 py-0.5 rounded bg-[#1F2228] hover:bg-[#2A2D33] text-[#00FF9C] border border-[#00FF9C]/40 text-[11px] font-bold flex items-center gap-1 transition-all h-6';
+        }
+      }
+
+      dom.btnPlayPause.addEventListener('click', () => {
+        state.isPlaying = !state.isPlaying;
+        syncPlayButtons();
       });
 
       // Single Step Controls
       dom.btnStepBack.addEventListener('click', () => {
         state.isPlaying = false;
-        dom.playIcon.textContent = '▶';
-        dom.playText.textContent = 'Play';
+        syncPlayButtons();
         const totalDeg = 360 * (state.cycles || 1);
         state.theta = (state.theta - 5 + totalDeg) % totalDeg;
         dom.timeScrubber.value = state.theta;
@@ -3034,8 +3457,7 @@
       });
       dom.btnStepFwd.addEventListener('click', () => {
         state.isPlaying = false;
-        dom.playIcon.textContent = '▶';
-        dom.playText.textContent = 'Play';
+        syncPlayButtons();
         const totalDeg = 360 * (state.cycles || 1);
         state.theta = (state.theta + 5) % totalDeg;
         dom.timeScrubber.value = state.theta;
@@ -3159,6 +3581,316 @@
       if (dom.chkCh5) dom.chkCh5.addEventListener('change', () => renderScope());
       if (dom.scope3phView) dom.scope3phView.addEventListener('change', () => renderScope());
 
+      // ==========================================
+      // FULL SCREEN MODE CONTROLLER
+      // ==========================================
+      const fsController = {
+        activeWindow: null, // null (closed) or 'schematic', 'scope', 'theory', 'measurements'
+        sidebarVisible: true,
+
+        // DOM elements
+        overlay: document.getElementById('fullscreen-overlay'),
+        mainSlot: document.getElementById('fullscreen-main-slot'),
+        paramsSlot: document.getElementById('fullscreen-params-slot'),
+        paramsAside: document.getElementById('fullscreen-params-aside'),
+        sidebarToggleText: document.getElementById('fs-sidebar-toggle-text'),
+        btnToggleSidebar: document.getElementById('btn-toggle-fs-sidebar'),
+        btnExit: document.getElementById('btn-exit-fullscreen'),
+        windowTabs: document.getElementById('fs-window-tabs'),
+        fsTopologyTabs: document.getElementById('fs-topology-tabs'),
+
+        // Slots in standard layout
+        slots: {
+          schematic: document.getElementById('slot-schematic'),
+          params: document.getElementById('slot-params'),
+          theory: document.getElementById('slot-theory'),
+          scope: document.getElementById('slot-scope'),
+          measurements: document.getElementById('slot-measurements')
+        },
+
+        // Cards
+        cards: {
+          schematic: document.getElementById('schematic-card'),
+          params: document.getElementById('params-card'),
+          theory: document.getElementById('theory-card'),
+          scope: document.getElementById('scope-card'),
+          measurements: document.getElementById('measurements-card')
+        },
+
+        // Toggle buttons on cards
+        btns: {
+          schematic: document.getElementById('btn-fs-schematic'),
+          theory: document.getElementById('btn-fs-theory'),
+          scope: document.getElementById('btn-fs-scope'),
+          measurements: document.getElementById('btn-fs-measurements')
+        },
+
+        init() {
+          // Attach full screen toggle buttons on individual cards
+          Object.keys(this.btns).forEach(key => {
+            const btn = this.btns[key];
+            if (btn) {
+              btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.activeWindow === key) {
+                  this.close();
+                } else {
+                  this.open(key);
+                }
+              });
+            }
+          });
+
+          // Window tabs switcher inside fullscreen overlay
+          if (this.windowTabs) {
+            this.windowTabs.querySelectorAll('button[data-window]').forEach(btn => {
+              btn.addEventListener('click', () => {
+                const win = btn.getAttribute('data-window');
+                if (win) this.switchWindow(win);
+              });
+            });
+          }
+
+          // Exit button in fullscreen header
+          if (this.btnExit) {
+            this.btnExit.addEventListener('click', () => this.close());
+          }
+
+          // Toggle Right Side Panel (System Parameters)
+          if (this.btnToggleSidebar) {
+            this.btnToggleSidebar.addEventListener('click', () => {
+              this.sidebarVisible = !this.sidebarVisible;
+              if (this.paramsAside) {
+                if (this.sidebarVisible) {
+                  this.paramsAside.classList.remove('hidden');
+                } else {
+                  this.paramsAside.classList.add('hidden');
+                }
+              }
+              if (this.sidebarToggleText) {
+                this.sidebarToggleText.textContent = this.sidebarVisible ? 'Panel' : 'Show Panel';
+              }
+              setTimeout(() => {
+                setupCanvases();
+                renderScope();
+              }, 40);
+            });
+          }
+
+          // Escape key exits fullscreen
+          window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.activeWindow) {
+              this.close();
+            }
+          });
+
+          // Master fullscreen simulation playback controls
+          const fsPlay = document.getElementById('fs-btn-play-pause');
+          if (fsPlay) {
+            fsPlay.addEventListener('click', () => {
+              state.isPlaying = !state.isPlaying;
+              syncPlayButtons();
+            });
+          }
+
+          const fsStepBack = document.getElementById('fs-btn-step-back');
+          if (fsStepBack) {
+            fsStepBack.addEventListener('click', () => {
+              dom.btnStepBack.click();
+            });
+          }
+
+          const fsStepFwd = document.getElementById('fs-btn-step-fwd');
+          if (fsStepFwd) {
+            fsStepFwd.addEventListener('click', () => {
+              dom.btnStepFwd.click();
+            });
+          }
+
+          // Topology Selector in Fullscreen
+          if (this.fsTopologyTabs) {
+            this.fsTopologyTabs.querySelectorAll('button[data-topo]').forEach(btn => {
+              btn.addEventListener('click', () => {
+                const topo = btn.getAttribute('data-topo');
+                if (topo) setTopology(topo);
+              });
+            });
+          }
+        },
+
+        syncTopologyTabs(activeTopo) {
+          if (this.fsTopologyTabs) {
+            this.fsTopologyTabs.querySelectorAll('button[data-topo]').forEach(btn => {
+              if (btn.getAttribute('data-topo') === activeTopo) {
+                btn.className = 'top-nav-btn active';
+              } else {
+                btn.className = 'top-nav-btn';
+              }
+            });
+          }
+        },
+
+        open(winName) {
+          if (!this.cards[winName]) return;
+          this.activeWindow = winName;
+
+          // Move params-card to fullscreen-params-slot as the persistent right-side panel
+          if (this.cards.params && this.paramsSlot && !this.paramsSlot.contains(this.cards.params)) {
+            this.paramsSlot.appendChild(this.cards.params);
+          }
+
+          // Show overlay
+          if (this.overlay) {
+            this.overlay.classList.remove('hidden');
+          }
+
+          // Switch to selected window
+          this.switchWindow(winName);
+
+          // Update toggle buttons text & style
+          this.updateToggleButtonsState();
+
+          // Resize canvases to fill full screen
+          setTimeout(() => {
+            setupCanvases();
+            renderScope();
+          }, 40);
+        },
+
+        switchWindow(winName) {
+          if (!this.cards[winName]) return;
+          this.activeWindow = winName;
+
+          // Return all non-params cards back to standard slots
+          Object.keys(this.cards).forEach(key => {
+            if (key !== 'params') {
+              const card = this.cards[key];
+              const slot = this.slots[key];
+              if (card && slot && card.parentElement === this.mainSlot && key !== winName) {
+                card.classList.remove('h-full', 'w-full', 'flex-1');
+                slot.appendChild(card);
+              }
+            }
+          });
+
+          // Mount selected card into fullscreen-main-slot
+          const targetCard = this.cards[winName];
+          if (targetCard && this.mainSlot) {
+            this.mainSlot.innerHTML = '';
+            this.mainSlot.appendChild(targetCard);
+            targetCard.classList.add('h-full', 'w-full', 'flex-1');
+          }
+
+          // Update fullscreen window switcher tab indicator
+          if (this.windowTabs) {
+            this.windowTabs.querySelectorAll('button[data-window]').forEach(btn => {
+              const w = btn.getAttribute('data-window');
+              if (w === winName) {
+                btn.classList.add('active');
+              } else {
+                btn.classList.remove('active');
+              }
+            });
+          }
+
+          // Adjust card view details for rich fullscreen presentation
+          const schematicContainer = document.getElementById('schematic-canvas-container');
+          if (schematicContainer) {
+            if (winName === 'schematic') {
+              schematicContainer.classList.remove('h-[290px]', 'sm:h-[310px]');
+              schematicContainer.classList.add('flex-1', 'min-h-[360px]');
+            } else {
+              schematicContainer.classList.remove('flex-1', 'min-h-[360px]');
+              schematicContainer.classList.add('h-[290px]', 'sm:h-[310px]');
+            }
+          }
+
+          const theoryDetails = document.getElementById('theory-fs-details');
+          if (theoryDetails) {
+            if (winName === 'theory') {
+              theoryDetails.classList.remove('hidden');
+            } else {
+              theoryDetails.classList.add('hidden');
+            }
+          }
+
+          const measurementsDetails = document.getElementById('measurements-fs-details');
+          if (measurementsDetails) {
+            if (winName === 'measurements') {
+              measurementsDetails.classList.remove('hidden');
+            } else {
+              measurementsDetails.classList.add('hidden');
+            }
+          }
+
+          this.updateToggleButtonsState();
+
+          setTimeout(() => {
+            setupCanvases();
+            renderScope();
+          }, 40);
+        },
+
+        close() {
+          if (!this.activeWindow) return;
+
+          // Return active card to its original slot
+          const currentCard = this.cards[this.activeWindow];
+          const currentSlot = this.slots[this.activeWindow];
+          if (currentCard && currentSlot) {
+            currentCard.classList.remove('h-full', 'w-full', 'flex-1');
+            currentSlot.appendChild(currentCard);
+          }
+
+          // Return params-card back to slot-params
+          if (this.cards.params && this.slots.params) {
+            this.slots.params.appendChild(this.cards.params);
+          }
+
+          // Reset specific card modifications
+          const schematicContainer = document.getElementById('schematic-canvas-container');
+          if (schematicContainer) {
+            schematicContainer.classList.remove('flex-1', 'min-h-[360px]');
+            schematicContainer.classList.add('h-[290px]', 'sm:h-[310px]');
+          }
+          const theoryDetails = document.getElementById('theory-fs-details');
+          if (theoryDetails) theoryDetails.classList.add('hidden');
+          const measurementsDetails = document.getElementById('measurements-fs-details');
+          if (measurementsDetails) measurementsDetails.classList.add('hidden');
+
+          this.activeWindow = null;
+          if (this.overlay) {
+            this.overlay.classList.add('hidden');
+          }
+
+          this.updateToggleButtonsState();
+
+          setTimeout(() => {
+            setupCanvases();
+            renderScope();
+          }, 50);
+        },
+
+        updateToggleButtonsState() {
+          Object.keys(this.btns).forEach(key => {
+            const btn = this.btns[key];
+            const icon = document.getElementById(`btn-fs-${key}-icon`);
+            const txt = document.getElementById(`btn-fs-${key}-text`);
+            if (btn) {
+              if (this.activeWindow === key) {
+                btn.classList.add('active');
+                if (icon) icon.textContent = '✕';
+                if (txt) txt.textContent = 'Exit FS';
+              } else {
+                btn.classList.remove('active');
+                if (icon) icon.textContent = '⛶';
+                if (txt) txt.textContent = 'Full Screen';
+              }
+            }
+          });
+        }
+      };
+
       // Responsive observer for pixel-perfect scope canvas fit
       if (window.ResizeObserver && dom.scopeContainer) {
         let resizeTimeout;
@@ -3177,8 +3909,10 @@
 
       // INITIALIZATION
       setupCanvases();
+      fsController.init();
       updateModeOptions();
       recalculateWaveforms();
+      syncPlayButtons();
       requestAnimationFrame(animLoop);
     })();
   </script>
