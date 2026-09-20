@@ -7,6 +7,7 @@ import { ControlsPanel } from './components/ControlsPanel';
 import { MetricsBar } from './components/MetricsBar';
 import { ANPCControlStudio } from './components/ANPCControlStudio';
 import { Zap, Layers, Activity, Sparkles, SlidersHorizontal, Maximize2, Minimize2, ChevronDown } from 'lucide-react';
+import { AppSwitcherMenu, InverterAppId } from '../../components/AppSwitcherMenu';
 
 const TOPOLOGIES: { id: TopologyType; label: string; tag: string }[] = [
   { id: '2L-VSI', label: '2L-VSI', tag: '6-Switch Baseline' },
@@ -16,7 +17,12 @@ const TOPOLOGIES: { id: TopologyType; label: string; tag: string }[] = [
   { id: 'OEW-VSI', label: 'OEW-VSI', tag: 'Open-End Winding' },
 ];
 
-export default function App() {
+export interface TractionInverterAppProps {
+  activeAppId?: InverterAppId;
+  onSelectApp?: (id: InverterAppId) => void;
+}
+
+export default function App({ activeAppId = 'traction', onSelectApp }: TractionInverterAppProps) {
   const [topology, setTopology] = useState<TopologyType>('3L-ANPC');
   const [anpcMode, setAnpcMode] = useState<'studio' | 'standard'>('studio');
   const [fullscreenMode, setFullscreenMode] = useState<'topology' | 'scope' | null>(null);
@@ -135,17 +141,11 @@ export default function App() {
       <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30 px-4 lg:px-8 py-2.5">
         <div className="w-full flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-400">
-              <Zap className="w-4 h-4" />
-            </div>
-            <div>
-              <h1 className="text-sm font-bold tracking-tight text-white flex items-center gap-2">
-                EV Traction Inverter Workbench
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-medium">
-                  SiC 3-Level
-                </span>
-              </h1>
-            </div>
+            <AppSwitcherMenu
+              activeAppId={activeAppId}
+              onSelectApp={onSelectApp || (() => {})}
+              isDark={true}
+            />
           </div>
 
           {/* Key Parameters Chips */}

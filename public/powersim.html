@@ -214,12 +214,116 @@
 <body class="bg-[#0A0A0C] text-[#E0E0E6] flex flex-col min-h-screen lg:h-screen lg:overflow-hidden">
   <!-- Top Navigation Bar (Compact, Single-Row, Non-Wrapping) -->
   <header class="border-b border-[#2A2D33] bg-[#151619] sticky top-0 z-50 px-3 py-1 flex items-center justify-between gap-2 h-10 shrink-0">
-    <div class="flex items-center gap-2 shrink-0">
-      <span class="text-sm sm:text-base font-bold tracking-tight text-[#00FF9C]">POWERSIM</span>
-      <span class="text-[10px] opacity-60 font-mono text-[#8E9299]">v2.4_PRO</span>
-      <div class="hidden md:flex items-center gap-1.5 pl-2 border-l border-[#2A2D33]">
-        <div class="w-1.5 h-1.5 rounded-full bg-[#00FF9C] shadow-[0_0_6px_#00FF9C]"></div>
-        <span class="text-[9px] uppercase font-semibold tracking-wider text-[#8E9299]">Live</span>
+    <!-- App Switcher Dropdown Menu in PowerSim Header -->
+    <div class="relative inline-block text-left shrink-0" id="powersim-app-switcher">
+      <button
+        type="button"
+        id="powersim-switcher-btn"
+        onclick="togglePowerSimAppMenu(event)"
+        class="flex items-center gap-2 px-2.5 py-1 rounded-lg border border-[#2A2D33] bg-[#1F2228] hover:bg-[#2A2D33] text-[#E0E0E6] text-xs font-medium transition-all cursor-pointer shadow-sm"
+        aria-haspopup="true"
+        aria-expanded="false"
+        title="Switch Inverter Application"
+      >
+        <div class="flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-[#00FF9C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span class="font-bold text-xs sm:text-sm tracking-tight text-[#E0E0E6] whitespace-nowrap">PowerSim Multi-Topo</span>
+        </div>
+        <span class="hidden sm:inline-block text-[9px] font-mono uppercase px-1.5 py-0.5 rounded border border-[#00FF9C]/30 bg-[#00FF9C]/10 text-[#00FF9C] whitespace-nowrap">
+          1-Ph / 3-Ph / CSI
+        </span>
+        <svg id="powersim-switcher-chevron" class="w-3.5 h-3.5 text-[#8E9299] transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+
+      <!-- Dropdown Panel -->
+      <div
+        id="powersim-switcher-menu"
+        class="hidden absolute left-0 top-full mt-1.5 w-[330px] sm:w-[400px] bg-[#11141B] border border-[#2A2D33] rounded-xl shadow-2xl p-2 z-[999]"
+      >
+        <div class="px-3 py-1.5 border-b border-[#242B38] flex items-center justify-between mb-1">
+          <span class="text-[10px] font-mono uppercase font-bold tracking-wider text-[#8E9299] flex items-center gap-1.5">
+            <svg class="w-3 h-3 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            Switch Inverter Tool
+          </span>
+          <span class="text-[10px] font-mono text-[#00FF9C] bg-[#00FF9C]/10 px-1.5 py-0.5 rounded border border-[#00FF9C]/30">
+            3 Workbench Engines
+          </span>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <!-- Option 1: Two-Level VSI -->
+          <button
+            type="button"
+            onclick="switchAppFromPowerSim('vsi2level')"
+            class="w-full text-left p-2.5 rounded-lg border border-[#242B38] bg-[#151619] hover:bg-[#1E222A] hover:border-sky-500/50 transition-all flex items-start gap-3 cursor-pointer"
+          >
+            <div class="p-2 rounded-lg border border-[#242B38] bg-[#0E1015] text-sky-400 shrink-0 mt-0.5">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white truncate">Two-Level VSI Simulator & PWM Analyzer</span>
+              </div>
+              <p class="text-[11px] text-[#8E9299] leading-snug mt-0.5 line-clamp-2">
+                SPWM, THIPWM, SVPWM, DPWM, offset injection, space vector hexagon, harmonics FFT.
+              </p>
+              <div class="flex items-center gap-1 mt-1.5">
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#1F2228] text-slate-300 border border-[#2A2D33]">2L-VSI</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#1F2228] text-slate-300 border border-[#2A2D33]">SVPWM</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#1F2228] text-slate-300 border border-[#2A2D33]">Hexagon</span>
+              </div>
+            </div>
+          </button>
+
+          <!-- Option 2: EV Traction -->
+          <button
+            type="button"
+            onclick="switchAppFromPowerSim('traction')"
+            class="w-full text-left p-2.5 rounded-lg border border-[#242B38] bg-[#151619] hover:bg-[#1E222A] hover:border-emerald-500/50 transition-all flex items-start gap-3 cursor-pointer"
+          >
+            <div class="p-2 rounded-lg border border-[#242B38] bg-[#0E1015] text-emerald-400 shrink-0 mt-0.5">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white truncate">EV Traction Inverter & ANPC Workbench</span>
+              </div>
+              <p class="text-[11px] text-[#8E9299] leading-snug mt-0.5 line-clamp-2">
+                2L-VSI, 3L-NPC, 3L-ANPC Control Studio, 3L-TNPC, OEW-VSI, switching losses.
+              </p>
+              <div class="flex items-center gap-1 mt-1.5">
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#1F2228] text-slate-300 border border-[#2A2D33]">3L-ANPC</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#1F2228] text-slate-300 border border-[#2A2D33]">NPC</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#1F2228] text-slate-300 border border-[#2A2D33]">Losses</span>
+              </div>
+            </div>
+          </button>
+
+          <!-- Option 3: PowerSim (Active) -->
+          <div class="w-full text-left p-2.5 rounded-lg border border-[#00FF9C]/40 bg-[#00FF9C]/10 transition-all flex items-start gap-3">
+            <div class="p-2 rounded-lg border border-[#00FF9C]/40 bg-[#00FF9C]/10 text-[#00FF9C] shrink-0 mt-0.5">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white truncate">PowerSim: Multi-Topology Visualizer</span>
+                <span class="text-xs text-[#00FF9C] font-bold">✓ Active</span>
+              </div>
+              <p class="text-[11px] text-[#8E9299] leading-snug mt-0.5 line-clamp-2">
+                1-Phase Half-Bridge, 1-Phase H-Bridge, 3-Phase 6-Switch VSI, and CSI.
+              </p>
+              <div class="flex items-center gap-1 mt-1.5">
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#1F2228] text-slate-300 border border-[#2A2D33]">Half-Bridge</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#1F2228] text-slate-300 border border-[#2A2D33]">3-Phase</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#1F2228] text-slate-300 border border-[#2A2D33]">CSI</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3915,6 +4019,72 @@
       syncPlayButtons();
       requestAnimationFrame(animLoop);
     })();
+
+    // App Switcher Dropdown Interaction Logic
+    function togglePowerSimAppMenu(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('powersim-switcher-menu');
+      const chevron = document.getElementById('powersim-switcher-chevron');
+      const btn = document.getElementById('powersim-switcher-btn');
+      if (!menu) return;
+      const isHidden = menu.classList.contains('hidden');
+      if (isHidden) {
+        menu.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+      } else {
+        menu.classList.add('hidden');
+        if (chevron) chevron.classList.remove('rotate-180');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    function switchAppFromPowerSim(targetAppId) {
+      // 1. PostMessage to parent React window if embedded in iframe
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'SWITCH_APP', appId: targetAppId }, '*');
+        return;
+      }
+      // 2. Otherwise navigate to index.html with query param
+      try {
+        const url = new URL(window.location.href);
+        let basePath = url.pathname;
+        if (basePath.endsWith('powersim.html')) {
+          basePath = basePath.replace('powersim.html', '');
+        }
+        window.location.href = `${url.origin}${basePath}?app=${targetAppId}`;
+      } catch (err) {
+        window.location.href = `/?app=${targetAppId}`;
+      }
+    }
+
+    // Close dropdown on outside click or escape
+    document.addEventListener('click', function(e) {
+      const container = document.getElementById('powersim-app-switcher');
+      const menu = document.getElementById('powersim-switcher-menu');
+      const chevron = document.getElementById('powersim-switcher-chevron');
+      const btn = document.getElementById('powersim-switcher-btn');
+      if (menu && !menu.classList.contains('hidden')) {
+        if (!container || !container.contains(e.target)) {
+          menu.classList.add('hidden');
+          if (chevron) chevron.classList.remove('rotate-180');
+          if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const menu = document.getElementById('powersim-switcher-menu');
+        const chevron = document.getElementById('powersim-switcher-chevron');
+        const btn = document.getElementById('powersim-switcher-btn');
+        if (menu && !menu.classList.contains('hidden')) {
+          menu.classList.add('hidden');
+          if (chevron) chevron.classList.remove('rotate-180');
+          if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
   </script>
 </body>
 </html>

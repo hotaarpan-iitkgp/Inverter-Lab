@@ -7,6 +7,7 @@ import { ControlPanel } from './components/ControlPanel';
 import { ModulationDetailCard } from './components/ModulationDetailCard';
 import { SpaceVectorHexagon } from './components/SpaceVectorHexagon';
 import { HarmonicsViewer } from './components/HarmonicsViewer';
+import { AppSwitcherMenu, InverterAppId } from '../../components/AppSwitcherMenu';
 import {
   Cpu,
   Activity,
@@ -38,7 +39,12 @@ export type DashboardLayoutMode =
   | 'side_circuit_scope'    // Power Stage + Waveforms Side-by-Side
   | 'side_hexagon_scope';   // Space Vector + Waveforms Side-by-Side
 
-export default function App() {
+export interface TwoLevelVsiAppProps {
+  activeAppId?: InverterAppId;
+  onSelectApp?: (id: InverterAppId) => void;
+}
+
+export default function App({ activeAppId = 'vsi2level', onSelectApp }: TwoLevelVsiAppProps) {
   // Theme state with local storage persistence
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('vsi_theme');
@@ -210,26 +216,16 @@ export default function App() {
         isDark ? 'border-slate-800 bg-slate-900/85' : 'border-slate-200 bg-white/90 shadow-sm'
       }`}>
         <div className="w-full px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
-          {/* Brand & Title */}
+          {/* Brand & App Switcher Dropdown Menu */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-900/30 ring-1 ring-sky-400/30">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className={`text-base font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  Two-Level VSI & PWM Analyzer
-                </h1>
-                <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full border ${
-                  isDark ? 'bg-sky-950 text-sky-400 border-sky-800/80' : 'bg-sky-50 text-sky-700 border-sky-300 font-semibold'
-                }`}>
-                  Interactive Simulator
-                </span>
-              </div>
-              <p className={`text-xs hidden sm:block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Working principle, animated current flow, offset injection & oscilloscope waveforms
-              </p>
-            </div>
+            <AppSwitcherMenu
+              activeAppId={activeAppId}
+              onSelectApp={onSelectApp || (() => {})}
+              isDark={isDark}
+            />
+            <p className={`text-xs hidden xl:block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Working principle, animated current flow, offset injection & oscilloscope waveforms
+            </p>
           </div>
 
           {/* Quick Presets, Tabs & Theme Switcher */}
