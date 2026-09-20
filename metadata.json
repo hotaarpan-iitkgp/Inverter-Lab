@@ -1,6 +1,6 @@
 {
-  "name": "PowerSim: Interactive Inverter Visualizer",
-  "description": "Interactive power electronics inverter simulator with real-time circuit schematic conduction animation, PWM modulation schemes, and synchronized multi-channel oscilloscope waveforms.",
+  "name": "Power Inverter Simulation & Analysis Suite",
+  "description": "Unified power electronics workbench integrating Two-Level VSI PWM Analyzer, EV Traction Inverter & ANPC Studio, and PowerSim Multi-Topology Visualizer.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
