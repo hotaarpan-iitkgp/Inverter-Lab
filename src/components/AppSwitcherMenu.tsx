@@ -106,11 +106,11 @@ export function AppSwitcherMenu({
         type="button"
         id="app-switcher-trigger-btn"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 cursor-pointer shadow-sm ${
+        className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 h-7.5 rounded-lg border text-xs font-medium transition-all duration-150 cursor-pointer shadow-sm ${
           isOpen
             ? isDark
-              ? 'bg-slate-800 border-sky-400 text-white ring-2 ring-sky-500/20 shadow-md'
-              : 'bg-slate-100 border-sky-500 text-slate-900 ring-2 ring-sky-500/20 shadow-md'
+              ? 'bg-slate-800 border-sky-400 text-white ring-1 ring-sky-500/30 shadow-md'
+              : 'bg-slate-100 border-sky-500 text-slate-900 ring-1 ring-sky-500/30 shadow-md'
             : isDark
               ? 'bg-slate-900/95 hover:bg-slate-800 border-slate-700/80 text-slate-200 hover:border-slate-600'
               : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-800 hover:border-slate-400'
@@ -120,14 +120,14 @@ export function AppSwitcherMenu({
         aria-label="Switch Inverter Application"
       >
         <div className="flex items-center gap-1.5">
-          <ActiveIcon className={`w-4 h-4 shrink-0 ${activeApp.accentColor}`} />
-          <span className="font-bold text-xs sm:text-sm tracking-tight whitespace-nowrap">
+          <ActiveIcon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${activeApp.accentColor}`} />
+          <span className="font-bold text-xs sm:text-[13px] tracking-tight whitespace-nowrap">
             {activeApp.shortLabel}
           </span>
         </div>
 
         <span
-          className={`hidden sm:inline-block text-[10px] font-mono uppercase px-1.5 py-0.5 rounded border whitespace-nowrap ${
+          className={`hidden md:inline-block text-[9px] font-mono uppercase px-1.5 py-0.2 rounded border whitespace-nowrap ${
             isDark
               ? 'bg-slate-800/80 text-slate-300 border-slate-700'
               : 'bg-slate-100 text-slate-600 border-slate-200 font-semibold'
@@ -137,7 +137,7 @@ export function AppSwitcherMenu({
         </span>
 
         <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
+          className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-transform duration-200 shrink-0 ${
             isOpen ? 'rotate-180 text-sky-400' : isDark ? 'text-slate-400' : 'text-slate-500'
           }`}
         />

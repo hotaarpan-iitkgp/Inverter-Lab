@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { InstantState, PWMStrategy, Theme, VsiParameters } from './types';
 import { computeInstantState } from './utils/pwmEngine';
 import { VsiCircuit } from './components/VsiCircuit';
@@ -27,7 +27,9 @@ import {
   Columns2,
   LayoutGrid,
   Sliders,
-  X
+  X,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 
 export type DashboardLayoutMode =
@@ -81,6 +83,74 @@ export default function App({ activeAppId = 'vsi2level', onSelectApp }: TwoLevel
   // Layout & Full Screen / Side-by-Side Mode States
   const [layoutMode, setLayoutMode] = useState<DashboardLayoutMode>('default');
   const [isControlPanelOpen, setIsControlPanelOpen] = useState<boolean>(true);
+
+  // Compact header dropdown states
+  const [isViewMenuOpen, setIsViewMenuOpen] = useState<boolean>(false);
+  const [isPresetMenuOpen, setIsPresetMenuOpen] = useState<boolean>(false);
+  const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState<boolean>(false);
+  const viewMenuRef = useRef<HTMLDivElement>(null);
+  const presetMenuRef = useRef<HTMLDivElement>(null);
+  const layoutMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menus on outside click or Escape
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (viewMenuRef.current && !viewMenuRef.current.contains(event.target as Node)) {
+        setIsViewMenuOpen(false);
+      }
+      if (presetMenuRef.current && !presetMenuRef.current.contains(event.target as Node)) {
+        setIsPresetMenuOpen(false);
+      }
+      if (layoutMenuRef.current && !layoutMenuRef.current.contains(event.target as Node)) {
+        setIsLayoutMenuOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsViewMenuOpen(false);
+        setIsPresetMenuOpen(false);
+        setIsLayoutMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const currentPresetName = useMemo(() => {
+    switch (params.strategy) {
+      case 'SPWM': return 'SPWM';
+      case 'MINMAX': return 'Min-Max (SVPWM)';
+      case 'THIPWM': return 'Third Harmonic';
+      case 'DPWM1': return 'DPWM1 (60°)';
+      case 'UPPER_CLAMP': return 'Upper Clamp';
+      case 'LOWER_CLAMP': return 'Lower Clamp';
+      default: return 'Preset';
+    }
+  }, [params.strategy]);
+
+  const currentViewName = useMemo(() => {
+    switch (activeTab) {
+      case 'main': return 'Circuit & Scope';
+      case 'harmonics': return 'FFT & Harmonics';
+      case 'guide': return 'Theory Guide';
+    }
+  }, [activeTab]);
+
+  const currentLayoutName = useMemo(() => {
+    switch (layoutMode) {
+      case 'default': return 'All Panels';
+      case 'fullscreen_circuit': return 'Power Stage';
+      case 'fullscreen_scope': return 'Waveforms';
+      case 'fullscreen_hexagon': return 'Space Vector';
+      case 'side_circuit_hexagon': return 'Stage + Vector';
+      case 'side_circuit_scope': return 'Stage + Scope';
+      case 'side_hexagon_scope': return 'Vector + Scope';
+    }
+  }, [layoutMode]);
 
   const animationFrameRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number | null>(null);
@@ -211,171 +281,170 @@ export default function App({ activeAppId = 'vsi2level', onSelectApp }: TwoLevel
     <div className={`min-h-screen flex flex-col transition-colors selection:bg-sky-500 selection:text-white ${
       isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'
     }`}>
-      {/* Top Navigation Bar */}
-      <header className={`border-b backdrop-blur sticky top-0 z-30 transition-colors ${
-        isDark ? 'border-slate-800 bg-slate-900/85' : 'border-slate-200 bg-white/90 shadow-sm'
+      {/* Sleek 40px Single-Row Header */}
+      <header className={`border-b sticky top-0 z-30 transition-colors h-10 px-3 sm:px-4 flex items-center justify-between gap-2 shrink-0 ${
+        isDark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white/95 shadow-sm'
       }`}>
-        <div className="w-full px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
-          {/* Brand & App Switcher Dropdown Menu */}
-          <div className="flex items-center gap-3">
-            <AppSwitcherMenu
-              activeAppId={activeAppId}
-              onSelectApp={onSelectApp || (() => {})}
-              isDark={isDark}
-            />
-            <p className={`text-xs hidden xl:block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Working principle, animated current flow, offset injection & oscilloscope waveforms
-            </p>
-          </div>
+        <div className="flex items-center gap-2 min-w-0">
+          {/* App Switcher Menu */}
+          <AppSwitcherMenu
+            activeAppId={activeAppId}
+            onSelectApp={onSelectApp || (() => {})}
+            isDark={isDark}
+          />
 
-          {/* Quick Presets, Tabs & Theme Switcher */}
-          <div className="flex items-center gap-2.5">
-            {/* Navigation Tabs */}
-            <div className={`flex items-center p-1 rounded-lg border text-xs font-medium ${
-              isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-200'
-            }`}>
-              <button
-                onClick={() => setActiveTab('main')}
-                className={`px-3 py-1.5 rounded-md transition-all ${
-                  activeTab === 'main'
-                    ? 'bg-sky-600 text-white shadow'
-                    : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Circuit & Oscilloscope
-              </button>
-              <button
-                onClick={() => setActiveTab('harmonics')}
-                className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
-                  activeTab === 'harmonics'
-                    ? 'bg-purple-600 text-white shadow'
-                    : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <BarChart3 className="w-3.5 h-3.5" />
-                FFT & Harmonics
-              </button>
-              <button
-                onClick={() => setActiveTab('guide')}
-                className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
-                  activeTab === 'guide'
-                    ? isDark ? 'bg-slate-800 text-white shadow' : 'bg-slate-800 text-white shadow'
-                    : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                Theory Guide
-              </button>
-            </div>
-
-            {/* Dark/Light Mode Toggle Button */}
+          {/* View Dropdown Menu */}
+          <div className="relative" ref={viewMenuRef}>
             <button
-              id="theme-toggle-btn"
-              onClick={toggleTheme}
-              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-              title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                isDark
-                  ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700 shadow-sm'
-                  : 'bg-white hover:bg-slate-50 text-indigo-700 border-slate-300 shadow-sm'
+              type="button"
+              onClick={() => {
+                setIsViewMenuOpen(prev => !prev);
+                setIsPresetMenuOpen(false);
+              }}
+              className={`flex items-center gap-1.5 px-2 sm:px-2.5 h-7.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                isViewMenuOpen
+                  ? isDark ? 'bg-slate-800 border-sky-400 text-white' : 'bg-slate-100 border-sky-500 text-slate-900'
+                  : isDark ? 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 hover:bg-slate-100 border-slate-300 text-slate-700'
               }`}
             >
-              {isDark ? (
-                <>
-                  <Sun className="w-4 h-4 text-amber-400" />
-                  <span className="hidden md:inline">Light</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-4 h-4 text-indigo-600" />
-                  <span className="hidden md:inline">Dark</span>
-                </>
-              )}
+              <Zap className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+              <span className="font-semibold text-xs whitespace-nowrap">{currentViewName}</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${isViewMenuOpen ? 'rotate-180 text-sky-400' : 'text-slate-400'}`} />
             </button>
+
+            {isViewMenuOpen && (
+              <div className={`absolute left-0 top-full mt-1 w-52 rounded-xl border shadow-xl p-1.5 z-50 ${
+                isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+              }`}>
+                <button
+                  onClick={() => { setActiveTab('main'); setIsViewMenuOpen(false); }}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                    activeTab === 'main'
+                      ? 'bg-sky-500/20 text-sky-400 font-semibold'
+                      : isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-sky-400" /> Circuit & Oscilloscope
+                  </span>
+                  {activeTab === 'main' && <Check className="w-3.5 h-3.5 text-sky-400" />}
+                </button>
+                <button
+                  onClick={() => { setActiveTab('harmonics'); setIsViewMenuOpen(false); }}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                    activeTab === 'harmonics'
+                      ? 'bg-purple-500/20 text-purple-400 font-semibold'
+                      : isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <BarChart3 className="w-3.5 h-3.5 text-purple-400" /> FFT & Harmonics
+                  </span>
+                  {activeTab === 'harmonics' && <Check className="w-3.5 h-3.5 text-purple-400" />}
+                </button>
+                <button
+                  onClick={() => { setActiveTab('guide'); setIsViewMenuOpen(false); }}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                    activeTab === 'guide'
+                      ? 'bg-amber-500/20 text-amber-400 font-semibold'
+                      : isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <BookOpen className="w-3.5 h-3.5 text-amber-400" /> Theory Guide
+                  </span>
+                  {activeTab === 'guide' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Presets Dropdown Menu */}
+          <div className="relative" ref={presetMenuRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsPresetMenuOpen(prev => !prev);
+                setIsViewMenuOpen(false);
+              }}
+              className={`flex items-center gap-1.5 px-2 sm:px-2.5 h-7.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                isPresetMenuOpen
+                  ? isDark ? 'bg-slate-800 border-amber-400 text-white' : 'bg-slate-100 border-amber-500 text-slate-900'
+                  : isDark ? 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 hover:bg-slate-100 border-slate-300 text-slate-700'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className="hidden md:inline text-slate-400">Preset:</span>
+              <span className="font-semibold text-amber-300 text-xs whitespace-nowrap">{currentPresetName}</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${isPresetMenuOpen ? 'rotate-180 text-amber-400' : 'text-slate-400'}`} />
+            </button>
+
+            {isPresetMenuOpen && (
+              <div className={`absolute left-0 top-full mt-1 w-64 rounded-xl border shadow-xl p-1.5 z-50 ${
+                isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+              }`}>
+                <div className={`px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider border-b mb-1 ${
+                  isDark ? 'text-slate-400 border-slate-800' : 'text-slate-500 border-slate-200'
+                }`}>
+                  Modulation Presets
+                </div>
+                {[
+                  { id: 'svpwm_minmax', label: 'Min-Max (SVPWM)', tag: '15.5% Boost', active: params.strategy === 'MINMAX' },
+                  { id: 'spwm_standard', label: 'SPWM (Sine PWM)', tag: 'Standard', active: params.strategy === 'SPWM' },
+                  { id: 'thipwm_boost', label: 'Third Harmonic (THIPWM)', tag: 'Boost', active: params.strategy === 'THIPWM' },
+                  { id: 'dpwm_clamp', label: 'DPWM1 (60° Clamped)', tag: 'Discontinuous', active: params.strategy === 'DPWM1' },
+                  { id: 'upper_clamp', label: 'Upper Bus Clamping', tag: 'Clamped', active: params.strategy === 'UPPER_CLAMP' },
+                  { id: 'lower_clamp', label: 'Lower Bus Clamping', tag: 'Clamped', active: params.strategy === 'LOWER_CLAMP' },
+                ].map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      applyPreset(p.id as any);
+                      setIsPresetMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                      p.active
+                        ? 'bg-amber-500/20 text-amber-300 font-semibold'
+                        : isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <span>{p.label}</span>
+                    <span className="text-[10px] font-mono opacity-70">{p.tag}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Quick Presets Strip (Edge-to-Edge) */}
-        <div className={`border-t px-4 sm:px-6 py-1.5 transition-colors ${
-          isDark ? 'bg-slate-950/90 border-slate-800/80' : 'bg-slate-50/90 border-slate-200'
-        }`}>
-          <div className="w-full flex items-center gap-2 overflow-x-auto text-xs font-mono">
-            <span className={`whitespace-nowrap flex items-center gap-1 ${isDark ? 'text-slate-500' : 'text-slate-600 font-semibold'}`}>
-              <Sparkles className="w-3 h-3 text-amber-500" /> Presets:
+        {/* Right side controls */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Quick Param Chips */}
+          <div className="hidden lg:flex items-center gap-1.5 text-[11px] font-mono">
+            <span className={`px-2 py-0.5 rounded border ${isDark ? 'bg-slate-800/80 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>
+              Vdc: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{params.vdc}V</strong>
             </span>
-            <button
-              onClick={() => applyPreset('spwm_standard')}
-              className={`px-2.5 py-0.5 rounded border transition-colors whitespace-nowrap ${
-                params.strategy === 'SPWM'
-                  ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-sm'
-                  : isDark
-                    ? 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
-                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              SPWM (Sine PWM)
-            </button>
-            <button
-              onClick={() => applyPreset('svpwm_minmax')}
-              className={`px-2.5 py-0.5 rounded border transition-colors whitespace-nowrap ${
-                params.strategy === 'MINMAX'
-                  ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-sm'
-                  : isDark
-                    ? 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
-                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              Min-Max (SVPWM)
-            </button>
-            <button
-              onClick={() => applyPreset('thipwm_boost')}
-              className={`px-2.5 py-0.5 rounded border transition-colors whitespace-nowrap ${
-                params.strategy === 'THIPWM'
-                  ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-sm'
-                  : isDark
-                    ? 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
-                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              Third Harmonic (15.5% Boost)
-            </button>
-            <button
-              onClick={() => applyPreset('dpwm_clamp')}
-              className={`px-2.5 py-0.5 rounded border transition-colors whitespace-nowrap ${
-                params.strategy === 'DPWM1'
-                  ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-sm'
-                  : isDark
-                    ? 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
-                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              DPWM1 (60° Clamped)
-            </button>
-            <button
-              onClick={() => applyPreset('upper_clamp')}
-              className={`px-2.5 py-0.5 rounded border transition-colors whitespace-nowrap ${
-                params.strategy === 'UPPER_CLAMP'
-                  ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-sm'
-                  : isDark
-                    ? 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
-                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              Upper Bus Clamping
-            </button>
-            <button
-              onClick={() => applyPreset('lower_clamp')}
-              className={`px-2.5 py-0.5 rounded border transition-colors whitespace-nowrap ${
-                params.strategy === 'LOWER_CLAMP'
-                  ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-sm'
-                  : isDark
-                    ? 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
-                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              Lower Bus Clamping
-            </button>
+            <span className={`px-2 py-0.5 rounded border ${isDark ? 'bg-slate-800/80 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>
+              fsw: <strong className="text-emerald-400">{(params.f0 * params.mf / 1000).toFixed(2)}kHz</strong>
+            </span>
+            <span className={`px-2 py-0.5 rounded border ${isDark ? 'bg-slate-800/80 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>
+              ma: <strong className="text-purple-400">{params.ma.toFixed(2)}</strong>
+            </span>
           </div>
+
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+            title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+            className={`flex items-center justify-center h-7.5 w-7.5 rounded-lg border text-xs transition-all cursor-pointer ${
+              isDark
+                ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700'
+                : 'bg-white hover:bg-slate-50 text-indigo-700 border-slate-300 shadow-sm'
+            }`}
+          >
+            {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-indigo-600" />}
+          </button>
         </div>
       </header>
 
@@ -384,23 +453,23 @@ export default function App({ activeAppId = 'vsi2level', onSelectApp }: TwoLevel
         {/* TAB 1: Main Circuit & Oscilloscope View */}
         {activeTab === 'main' && (
           <div className="flex flex-col gap-3 w-full">
-            {/* Layout Mode Selector & Control Panel Toggle Bar */}
-            <div className={`flex flex-wrap items-center justify-between gap-2.5 p-2 rounded-xl border transition-colors ${
-              isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
+            {/* Compact Control & Layout Toolbar */}
+            <div className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border transition-colors ${
+              isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
             }`}>
               {/* Left: Toggle Control Panel button */}
               <div className="flex items-center gap-2">
                 <button
                   id="toggle-control-panel-btn"
                   onClick={() => setIsControlPanelOpen(prev => !prev)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 h-7 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
                     isControlPanelOpen
                       ? isDark
                         ? 'bg-slate-800 text-sky-400 border-slate-700 hover:bg-slate-700'
                         : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100'
                       : isDark
-                        ? 'bg-amber-950/50 text-amber-300 border-amber-800/60 hover:bg-amber-900/60 shadow-sm'
-                        : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 shadow-sm'
+                        ? 'bg-amber-950/50 text-amber-300 border-amber-800/60 hover:bg-amber-900/60'
+                        : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
                   }`}
                   title={isControlPanelOpen ? 'Collapse Left Control Panel' : 'Expand Left Control Panel'}
                 >
@@ -417,117 +486,62 @@ export default function App({ activeAppId = 'vsi2level', onSelectApp }: TwoLevel
                   )}
                 </button>
 
-                {/* Status indicator */}
                 <span className={`text-[11px] font-mono hidden sm:inline ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  {isControlPanelOpen ? 'Sidebar Docked' : 'Sidebar Collapsed (100% Canvas)'}
+                  {isControlPanelOpen ? 'Sidebar Docked' : '100% Canvas Mode'}
                 </span>
               </div>
 
-              {/* Right: Layout Switcher (Default, Full Screen modes, Side-by-Side modes) */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {/* Default All Panels */}
+              {/* Right: Layout Dropdown */}
+              <div className="relative" ref={layoutMenuRef}>
                 <button
-                  onClick={() => setLayoutMode('default')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                    layoutMode === 'default'
-                      ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
-                      : isDark
-                        ? 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-slate-700'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                  type="button"
+                  onClick={() => setIsLayoutMenuOpen(prev => !prev)}
+                  className={`flex items-center gap-1.5 px-2.5 h-7 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                    isLayoutMenuOpen
+                      ? isDark ? 'bg-slate-800 border-sky-400 text-white' : 'bg-slate-100 border-sky-500 text-slate-900'
+                      : isDark ? 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 hover:bg-slate-100 border-slate-300 text-slate-700'
                   }`}
-                  title="Default View: Power Stage, Hexagon, and Waveforms combined"
                 >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                  <span>All Panels</span>
+                  <LayoutGrid className="w-3.5 h-3.5 text-sky-400" />
+                  <span className="hidden sm:inline text-slate-400">Layout:</span>
+                  <span className="font-semibold text-xs">{currentLayoutName}</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform ${isLayoutMenuOpen ? 'rotate-180 text-sky-400' : 'text-slate-400'}`} />
                 </button>
 
-                {/* Full Screen Menu / Group */}
-                <div className={`flex items-center p-0.5 rounded-lg border text-xs ${
-                  isDark ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-100 border-slate-200'
-                }`}>
-                  <span className={`text-[10px] font-mono px-1.5 flex items-center gap-1 ${
-                    isDark ? 'text-slate-400' : 'text-slate-500'
+                {isLayoutMenuOpen && (
+                  <div className={`absolute right-0 top-full mt-1 w-56 rounded-xl border shadow-xl p-1.5 z-50 ${
+                    isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
                   }`}>
-                    <Maximize2 className="w-3 h-3 text-amber-400" /> Full Screen:
-                  </span>
-                  <button
-                    onClick={() => setLayoutMode(layoutMode === 'fullscreen_circuit' ? 'default' : 'fullscreen_circuit')}
-                    className={`px-2 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
-                      layoutMode === 'fullscreen_circuit'
-                        ? 'bg-amber-600 text-white shadow-sm'
-                        : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-white'
-                    }`}
-                    title="Two-Level Power Stage in Full Screen"
-                  >
-                    ⚡ Power Stage
-                  </button>
-                  <button
-                    onClick={() => setLayoutMode(layoutMode === 'fullscreen_scope' ? 'default' : 'fullscreen_scope')}
-                    className={`px-2 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
-                      layoutMode === 'fullscreen_scope'
-                        ? 'bg-amber-600 text-white shadow-sm'
-                        : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-white'
-                    }`}
-                    title="Oscilloscope Waveforms in Full Screen"
-                  >
-                    📈 Waveforms
-                  </button>
-                  <button
-                    onClick={() => setLayoutMode(layoutMode === 'fullscreen_hexagon' ? 'default' : 'fullscreen_hexagon')}
-                    className={`px-2 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
-                      layoutMode === 'fullscreen_hexagon'
-                        ? 'bg-amber-600 text-white shadow-sm'
-                        : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-white'
-                    }`}
-                    title="Space Vector Hexagon in Full Screen"
-                  >
-                    🎯 Space Vector
-                  </button>
-                </div>
-
-                {/* Side-by-Side Menu / Group */}
-                <div className={`flex items-center p-0.5 rounded-lg border text-xs ${
-                  isDark ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-100 border-slate-200'
-                }`}>
-                  <span className={`text-[10px] font-mono px-1.5 flex items-center gap-1 ${
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  }`}>
-                    <Columns2 className="w-3 h-3 text-sky-400" /> Side-by-Side:
-                  </span>
-                  <button
-                    onClick={() => setLayoutMode(layoutMode === 'side_circuit_hexagon' ? 'default' : 'side_circuit_hexagon')}
-                    className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                      layoutMode === 'side_circuit_hexagon'
-                        ? 'bg-sky-600 text-white shadow-sm'
-                        : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-white'
-                    }`}
-                    title="Two-Level Power Stage + Space Vector Hexagon side by side"
-                  >
-                    ⚡ + 🎯
-                  </button>
-                  <button
-                    onClick={() => setLayoutMode(layoutMode === 'side_circuit_scope' ? 'default' : 'side_circuit_scope')}
-                    className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                      layoutMode === 'side_circuit_scope'
-                        ? 'bg-sky-600 text-white shadow-sm'
-                        : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-white'
-                    }`}
-                    title="Two-Level Power Stage + Oscilloscope Waveforms side by side"
-                  >
-                    ⚡ + 📈
-                  </button>
-                  <button
-                    onClick={() => setLayoutMode(layoutMode === 'side_hexagon_scope' ? 'default' : 'side_hexagon_scope')}
-                    className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                      layoutMode === 'side_hexagon_scope'
-                        ? 'bg-sky-600 text-white shadow-sm'
-                        : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-white'
-                    }`}
-                    title="Space Vector Hexagon + Oscilloscope Waveforms side by side"
-                  >
-                    🎯 + 📈
-                  </button>
-                </div>
+                    {[
+                      { id: 'default', label: 'All Panels (Combined)', icon: LayoutGrid },
+                      { id: 'fullscreen_circuit', label: '⚡ Full Power Stage', icon: Maximize2 },
+                      { id: 'fullscreen_scope', label: '📈 Full Waveforms', icon: Maximize2 },
+                      { id: 'fullscreen_hexagon', label: '🎯 Full Space Vector', icon: Maximize2 },
+                      { id: 'side_circuit_hexagon', label: '⚡ + 🎯 Stage & Vector', icon: Columns2 },
+                      { id: 'side_circuit_scope', label: '⚡ + 📈 Stage & Scope', icon: Columns2 },
+                      { id: 'side_hexagon_scope', label: '🎯 + 📈 Vector & Scope', icon: Columns2 },
+                    ].map(layout => (
+                      <button
+                        key={layout.id}
+                        onClick={() => {
+                          setLayoutMode(layout.id as DashboardLayoutMode);
+                          setIsLayoutMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                          layoutMode === layout.id
+                            ? 'bg-sky-500/20 text-sky-300 font-semibold'
+                            : isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <layout.icon className="w-3.5 h-3.5 text-sky-400" />
+                          {layout.label}
+                        </span>
+                        {layoutMode === layout.id && <Check className="w-3.5 h-3.5 text-sky-400" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

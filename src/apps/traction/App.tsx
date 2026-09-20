@@ -6,7 +6,7 @@ import { OscilloscopeCanvas, ChannelState, DEFAULT_CHANNELS } from './components
 import { ControlsPanel } from './components/ControlsPanel';
 import { MetricsBar } from './components/MetricsBar';
 import { ANPCControlStudio } from './components/ANPCControlStudio';
-import { Zap, Layers, Activity, Sparkles, SlidersHorizontal, Maximize2, Minimize2, ChevronDown } from 'lucide-react';
+import { Zap, Layers, Activity, Sparkles, SlidersHorizontal, Maximize2, Minimize2, ChevronDown, Check } from 'lucide-react';
 import { AppSwitcherMenu, InverterAppId } from '../../components/AppSwitcherMenu';
 
 const TOPOLOGIES: { id: TopologyType; label: string; tag: string }[] = [
@@ -26,6 +26,36 @@ export default function App({ activeAppId = 'traction', onSelectApp }: TractionI
   const [topology, setTopology] = useState<TopologyType>('3L-ANPC');
   const [anpcMode, setAnpcMode] = useState<'studio' | 'standard'>('studio');
   const [fullscreenMode, setFullscreenMode] = useState<'topology' | 'scope' | null>(null);
+
+  // Compact header dropdown states
+  const [isTopologyOpen, setIsTopologyOpen] = useState<boolean>(false);
+  const [isAnpcModeOpen, setIsAnpcModeOpen] = useState<boolean>(false);
+  const topologyMenuRef = useRef<HTMLDivElement>(null);
+  const anpcModeMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click or Escape
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (topologyMenuRef.current && !topologyMenuRef.current.contains(event.target as Node)) {
+        setIsTopologyOpen(false);
+      }
+      if (anpcModeMenuRef.current && !anpcModeMenuRef.current.contains(event.target as Node)) {
+        setIsAnpcModeOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsTopologyOpen(false);
+        setIsAnpcModeOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // Simulation Parameters
   const [params, setParams] = useState<InverterParameters>({
@@ -137,128 +167,154 @@ export default function App({ activeAppId = 'traction', onSelectApp }: TractionI
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-sky-500 selection:text-white">
-      {/* Sleek Minimal Header */}
-      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30 px-4 lg:px-8 py-2.5">
-        <div className="w-full flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <AppSwitcherMenu
-              activeAppId={activeAppId}
-              onSelectApp={onSelectApp || (() => {})}
-              isDark={true}
-            />
+      {/* Sleek 40px Compact Single-Row Header */}
+      <header className="border-b border-slate-800 bg-slate-900/95 sticky top-0 z-30 px-3 sm:px-4 h-10 flex items-center justify-between gap-2 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <AppSwitcherMenu
+            activeAppId={activeAppId}
+            onSelectApp={onSelectApp || (() => {})}
+            isDark={true}
+          />
+
+          {/* Topology Dropdown Menu */}
+          <div className="relative" ref={topologyMenuRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsTopologyOpen(prev => !prev);
+                setIsAnpcModeOpen(false);
+              }}
+              className={`flex items-center gap-1.5 px-2.5 h-7.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                isTopologyOpen
+                  ? 'bg-slate-800 border-sky-400 text-white'
+                  : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+              <span className="hidden sm:inline text-slate-400">Topology:</span>
+              <span className="font-semibold text-sky-300 text-xs whitespace-nowrap">{topology}</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${isTopologyOpen ? 'rotate-180 text-sky-400' : 'text-slate-400'}`} />
+            </button>
+
+            {isTopologyOpen && (
+              <div className="absolute left-0 top-full mt-1 w-64 rounded-xl border border-slate-700 bg-slate-900 shadow-xl p-1.5 z-50 text-slate-200">
+                <div className="px-2.5 py-1 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1">
+                  Select Inverter Topology
+                </div>
+                {TOPOLOGIES.map(t => {
+                  const isSelected = topology === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setTopology(t.id);
+                        setIsTopologyOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-sky-500/20 text-sky-300 font-semibold'
+                          : 'hover:bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{t.label}</span>
+                        <span className="text-[10px] font-mono opacity-60">({t.tag})</span>
+                      </div>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-sky-400" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Key Parameters Chips */}
-          <div className="flex items-center gap-2 text-xs font-mono">
-            <span className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">
-              V_dc: <strong className="text-white">{params.vdc}V</strong>
-            </span>
-            <span className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">
-              f_sw: <strong className="text-emerald-400">{(params.fsw / 1000).toFixed(0)}kHz</strong>
-            </span>
-            <span className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">
-              m_a: <strong className="text-purple-300">{params.ma.toFixed(2)}</strong>
-            </span>
-            <span className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sky-400 font-bold">
-              {params.carrierDisposition}
-            </span>
-          </div>
+          {/* If 3L-ANPC, show Mode Dropdown */}
+          {topology === '3L-ANPC' && (
+            <div className="relative" ref={anpcModeMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAnpcModeOpen(prev => !prev);
+                  setIsTopologyOpen(false);
+                }}
+                className={`flex items-center gap-1.5 px-2.5 h-7.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                  isAnpcModeOpen
+                    ? 'bg-slate-800 border-teal-400 text-white'
+                    : 'bg-slate-900 hover:bg-slate-800 border-teal-800/80 text-teal-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                <span className="hidden md:inline text-slate-400">Mode:</span>
+                <span className="font-semibold text-teal-300 text-xs whitespace-nowrap">
+                  {anpcMode === 'studio' ? 'Control Studio' : 'Standard LSPWM'}
+                </span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${isAnpcModeOpen ? 'rotate-180 text-teal-400' : 'text-slate-400'}`} />
+              </button>
+
+              {isAnpcModeOpen && (
+                <div className="absolute left-0 top-full mt-1 w-64 rounded-xl border border-slate-700 bg-slate-900 shadow-xl p-1.5 z-50 text-slate-200">
+                  <div className="px-2.5 py-1 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1">
+                    3L-ANPC Operating Mode
+                  </div>
+                  <button
+                    onClick={() => {
+                      setAnpcMode('studio');
+                      setIsAnpcModeOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                      anpcMode === 'studio'
+                        ? 'bg-teal-500/20 text-teal-300 font-semibold'
+                        : 'hover:bg-slate-800 text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                      <span>ANPC Control Studio (PI, PR, MPC)</span>
+                    </div>
+                    {anpcMode === 'studio' && <Check className="w-3.5 h-3.5 text-teal-400" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAnpcMode('standard');
+                      setIsAnpcModeOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                      anpcMode === 'standard'
+                        ? 'bg-sky-500/20 text-sky-300 font-semibold'
+                        : 'hover:bg-slate-800 text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Standard LSPWM Open-Loop</span>
+                    </div>
+                    {anpcMode === 'standard' && <Check className="w-3.5 h-3.5 text-sky-400" />}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Key Parameters Chips */}
+        <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono shrink-0">
+          <span className="px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
+            V_dc: <strong className="text-white">{params.vdc}V</strong>
+          </span>
+          <span className="px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
+            f_sw: <strong className="text-emerald-400">{(params.fsw / 1000).toFixed(0)}kHz</strong>
+          </span>
+          <span className="px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
+            m_a: <strong className="text-purple-300">{params.ma.toFixed(2)}</strong>
+          </span>
+          <span className="px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700 text-sky-400 font-bold">
+            {params.carrierDisposition}
+          </span>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="w-full px-4 lg:px-8 py-4 flex-1 space-y-4">
-        {/* Topology Selector */}
-        <section aria-label="Topology Selection" className="bg-slate-900 border border-slate-800 rounded-xl p-2.5 shadow-lg">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-sky-400" /> Inverter Topology:
-            </span>
-            <span className="text-xs font-mono text-slate-400">
-              Active: <strong className="text-sky-300">{topology}</strong>
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            {TOPOLOGIES.map((t) => {
-              const isSelected = topology === t.id;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setTopology(t.id)}
-                  className={`flex flex-col text-left p-2 rounded-lg border transition-all ${
-                    isSelected
-                      ? 'bg-sky-500/15 border-sky-500/50 shadow-md shadow-sky-950/50'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className={`text-xs font-mono font-bold ${isSelected ? 'text-sky-300' : 'text-slate-200'}`}>
-                      {t.label}
-                    </span>
-                    <span
-                      className={`text-[9px] font-mono px-1 py-0.5 rounded font-medium ${
-                        isSelected
-                          ? 'bg-sky-400/20 text-sky-200 border border-sky-400/30'
-                          : 'bg-slate-800 text-slate-400'
-                      }`}
-                    >
-                      {t.tag}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ANPC Specialized Mode Selector Banner (Only when 3L-ANPC is selected) */}
-        {topology === '3L-ANPC' && (
-          <section className="bg-gradient-to-r from-teal-950/40 via-slate-900 to-slate-900 border border-teal-500/30 rounded-xl p-3 shadow-lg flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/40">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-white flex items-center gap-2">
-                  <span>3L-ANPC Operating Modes:</span>
-                  <span className="text-[10px] font-mono text-teal-400 bg-teal-950/80 px-2 py-0.5 rounded border border-teal-800">
-                    Giuseppe Marsotto Control Suite Active
-                  </span>
-                </div>
-                <div className="text-[11px] font-mono text-slate-400">
-                  Switch between the dedicated closed-loop control studio and the open-loop multi-topology benchmark.
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-mono">
-              <button
-                onClick={() => setAnpcMode('studio')}
-                className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 ${
-                  anpcMode === 'studio'
-                    ? 'bg-teal-500 text-slate-950 font-bold shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                ANPC Control Studio (PI, PR, FCS/OSS-MPC)
-              </button>
-              <button
-                onClick={() => setAnpcMode('standard')}
-                className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 ${
-                  anpcMode === 'standard'
-                    ? 'bg-sky-500 text-slate-950 font-bold shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                Standard LSPWM Open-Loop
-              </button>
-            </div>
-          </section>
-        )}
-
+      <main className="w-full px-3 sm:px-4 lg:px-6 py-3 flex-1 space-y-3">
         {/* Main Render Area: Either ANPC Control Studio or Standard Workbench */}
         {topology === '3L-ANPC' && anpcMode === 'studio' ? (
           <ANPCControlStudio />
