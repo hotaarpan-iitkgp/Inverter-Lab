@@ -50,8 +50,8 @@ export const APPS: AppConfig[] = [
   },
   {
     id: 'powersim',
-    name: 'PowerSim: Multi-Topology Visualizer',
-    shortLabel: 'PowerSim Multi-Topo',
+    name: 'DC-AC Basic: Multi-Topology Visualizer',
+    shortLabel: 'DC-AC Basic',
     badge: '1-Ph / 3-Ph / CSI',
     description: '1-Phase Half-Bridge, 1-Phase H-Bridge, 3-Phase 6-Switch VSI, and CSI with IEEE 315 MOSFET schematic animation & live diagnostics.',
     icon: Activity,

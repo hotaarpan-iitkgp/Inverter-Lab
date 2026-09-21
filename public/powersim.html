@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PowerSim: Interactive Inverter Visualizer</title>
+  <title>DC-AC Basic: Interactive Inverter Visualizer</title>
   <meta name="description" content="Interactive power electronics inverter simulator with real-time circuit schematic conduction animation, PWM modulation schemes, and synchronized multi-channel oscilloscope waveforms." />
-  <meta property="og:title" content="PowerSim: Interactive Inverter Visualizer" />
+  <meta property="og:title" content="DC-AC Basic: Interactive Inverter Visualizer" />
   <meta property="og:description" content="Interactive power electronics inverter simulator with real-time circuit schematic conduction animation, PWM modulation schemes, and synchronized multi-channel oscilloscope waveforms." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -229,7 +229,7 @@
           <svg class="w-4 h-4 text-[#00FF9C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
           </svg>
-          <span class="font-bold text-xs sm:text-sm tracking-tight text-[#E0E0E6] whitespace-nowrap">PowerSim Multi-Topo</span>
+          <span class="font-bold text-xs sm:text-sm tracking-tight text-[#E0E0E6] whitespace-nowrap">DC-AC Basic</span>
         </div>
         <span class="hidden sm:inline-block text-[9px] font-mono uppercase px-1.5 py-0.5 rounded border border-[#00FF9C]/30 bg-[#00FF9C]/10 text-[#00FF9C] whitespace-nowrap">
           1-Ph / 3-Ph / CSI
@@ -310,7 +310,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-white truncate">PowerSim: Multi-Topology Visualizer</span>
+                <span class="text-xs font-bold text-white truncate">DC-AC Basic: Multi-Topology Visualizer</span>
                 <span class="text-xs text-[#00FF9C] font-bold">✓ Active</span>
               </div>
               <p class="text-[11px] text-[#8E9299] leading-snug mt-0.5 line-clamp-2">
@@ -748,7 +748,7 @@
     <!-- Fullscreen Header Bar -->
     <header class="border-b border-[#242B38] bg-[#11141B] px-3 py-1 flex items-center justify-between gap-2 h-10 shrink-0">
       <div class="flex items-center gap-2 shrink-0">
-        <span class="text-sm font-bold tracking-tight text-[#00FF9C]">POWERSIM</span>
+        <span class="text-sm font-bold tracking-tight text-[#00FF9C]">DC-AC BASIC</span>
         <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00FF9C]/10 text-[#00FF9C] border border-[#00FF9C]/30 font-semibold tracking-wider">FULL SCREEN</span>
         <div class="hidden sm:flex items-center gap-1.5 pl-2 border-l border-[#242B38]">
           <div class="w-1.5 h-1.5 rounded-full bg-[#00FF9C] shadow-[0_0_6px_#00FF9C]"></div>
@@ -1346,9 +1346,9 @@
         // DYNAMIC CURRENT & VOLTAGE SOLVER (R / R-L / R-C)
         // ==========================================
         const R = Math.max(1, state.R);
-        const L = Math.max(0.0001, state.L);
+        const L = Math.max(0, state.L);
         const C = Math.max(1e-6, state.C);
-        const isPureR = state.loadType === 'r';
+        const isPureR = state.loadType === 'r' || (state.loadType === 'rl' && L <= 1e-6);
 
         if (state.topology === 'csi') {
           if (isPureR) {
@@ -1357,15 +1357,18 @@
             }
           } else {
             let v_curr = 0;
+            const tau_c = R * C;
+            const Ec = Math.exp(-dt / tau_c);
+            const coeffI = R * (1 - Ec);
             // Warm-up to periodic steady-state
             for (let warm = 0; warm < 3 * N; warm++) {
               const i_in = w.i_out[warm % N];
-              v_curr += ((i_in - v_curr / R) / C) * dt;
+              v_curr = v_curr * Ec + i_in * coeffI;
             }
             // Record displayed cycle(s)
             for (let i = 0; i < N; i++) {
               const i_in = w.i_out[i];
-              v_curr += ((i_in - v_curr / R) / C) * dt;
+              v_curr = v_curr * Ec + i_in * coeffI;
               w.v_out[i] = v_curr;
             }
           }
@@ -1378,18 +1381,21 @@
             }
           } else {
             let iA = 0, iB = 0, iC = 0;
-            // Warm-up
+            const tau = L / R;
+            const E = Math.exp(-dt / tau);
+            const coeffV = (1 - E) / R;
+            // Warm-up to periodic steady-state
             for (let warm = 0; warm < 3 * N; warm++) {
               const idx = warm % N;
-              iA += ((w.v_AN[idx] - R * iA) / L) * dt;
-              iB += ((w.v_BN[idx] - R * iB) / L) * dt;
-              iC += ((w.v_CN[idx] - R * iC) / L) * dt;
+              iA = iA * E + w.v_AN[idx] * coeffV;
+              iB = iB * E + w.v_BN[idx] * coeffV;
+              iC = iC * E + w.v_CN[idx] * coeffV;
             }
             // Record
             for (let i = 0; i < N; i++) {
-              iA += ((w.v_AN[i] - R * iA) / L) * dt;
-              iB += ((w.v_BN[i] - R * iB) / L) * dt;
-              iC += ((w.v_CN[i] - R * iC) / L) * dt;
+              iA = iA * E + w.v_AN[i] * coeffV;
+              iB = iB * E + w.v_BN[i] * coeffV;
+              iC = iC * E + w.v_CN[i] * coeffV;
               w.i_out[i] = iA;
               w.i_B[i] = iB;
               w.i_C[i] = iC;
@@ -1403,16 +1409,19 @@
             }
           } else {
             let i_curr = 0;
-            // Warm-up
+            const tau = L / R;
+            const E = Math.exp(-dt / tau);
+            const coeffV = (1 - E) / R;
+            // Warm-up to periodic steady-state
             for (let warm = 0; warm < 3 * N; warm++) {
               const idx = warm % N;
               const v = w.v_out[idx];
-              i_curr += ((v - R * i_curr) / L) * dt;
+              i_curr = i_curr * E + v * coeffV;
             }
             // Record
             for (let i = 0; i < N; i++) {
               const v = w.v_out[i];
-              i_curr += ((v - R * i_curr) / L) * dt;
+              i_curr = i_curr * E + v * coeffV;
               w.i_out[i] = i_curr;
             }
           }
@@ -1476,7 +1485,7 @@
         const vrms_fund = fundAmp / Math.SQRT2;
 
         let XL = 0, Z = R, phi_deg = 0, pf = 1.0;
-        if (state.loadType === 'r') {
+        if (state.loadType === 'r' || (state.loadType === 'rl' && L <= 1e-6)) {
           XL = 0;
           Z = R;
           phi_deg = 0;
@@ -1525,13 +1534,14 @@
         dom.valPower.textContent = `${m.power.toFixed(1)} W`;
         dom.valApparentPower.textContent = `S: ${m.va.toFixed(1)} VA`;
         
-        const pfSuffix = state.loadType === 'r' ? 'Unity' : (state.loadType === 'rc' ? 'Lead' : 'Lag');
+        const isPureRNow = state.loadType === 'r' || (state.loadType === 'rl' && state.L <= 1e-6);
+        const pfSuffix = isPureRNow ? 'Unity' : (state.loadType === 'rc' ? 'Lead' : 'Lag');
         dom.valPf.textContent = `${m.pf.toFixed(2)} ${pfSuffix}`;
 
         dom.valPhaseAngle.textContent = `φ = ${m.phi_deg.toFixed(1)}°`;
         dom.valThd.textContent = `${m.thd_v.toFixed(1)} %`;
         dom.valImpedance.textContent = `${m.Z.toFixed(1)} Ω`;
-        dom.valReactance.textContent = state.loadType === 'r' ? `XL = 0.0 Ω (Pure R)` : (state.loadType === 'rc' ? `XC = ${(1/(2*Math.PI*state.fo*state.C)).toFixed(1)} Ω` : `XL = ${m.XL.toFixed(1)} Ω`);
+        dom.valReactance.textContent = isPureRNow ? `XL = 0.0 Ω (Pure R)` : (state.loadType === 'rc' ? `XC = ${(1/(2*Math.PI*state.fo*state.C)).toFixed(1)} Ω` : `XL = ${m.XL.toFixed(1)} Ω`);
 
         // Synchronize main and fullscreen footer status bars
         const fVrms = document.getElementById('footer-vrms');

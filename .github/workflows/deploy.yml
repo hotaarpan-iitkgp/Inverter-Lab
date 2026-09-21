@@ -18,6 +18,9 @@ concurrency:
   group: 'pages'
   cancel-in-progress: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,7 +31,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
@@ -39,14 +42,19 @@ jobs:
             npm install
           fi
 
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
       - name: Build static site
         run: npm run build
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
 
-      - name: Prevent Jekyll processing
-        run: touch dist/.nojekyll
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - name: Setup static files & SPA fallback
+        run: |
+          touch dist/.nojekyll
+          cp dist/index.html dist/404.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

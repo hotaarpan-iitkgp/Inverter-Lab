@@ -1,6 +1,6 @@
 {
   "name": "Power Inverter Simulation & Analysis Suite",
-  "description": "Unified power electronics workbench integrating Two-Level VSI PWM Analyzer, EV Traction Inverter & ANPC Studio, and PowerSim Multi-Topology Visualizer.",
+  "description": "Unified power electronics workbench integrating Two-Level VSI PWM Analyzer, EV Traction Inverter & ANPC Studio, and DC-AC Basic Multi-Topology Visualizer.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

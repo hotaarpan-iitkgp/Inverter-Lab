@@ -59,7 +59,7 @@ export default function PowerSimApp({ activeAppId = 'powersim', onSelectApp }: P
       {isLoading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#090B0E] z-10 gap-2">
           <div className="w-7 h-7 border-2 border-[#00FF9C] border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-xs font-mono text-slate-400">Loading PowerSim Multi-Topology Engine...</span>
+          <span className="text-xs font-mono text-slate-400">Loading DC-AC Basic Multi-Topology Engine...</span>
         </div>
       )}
 
@@ -67,7 +67,7 @@ export default function PowerSimApp({ activeAppId = 'powersim', onSelectApp }: P
       {hasError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#090B0E] z-20 gap-3 px-4 text-center">
           <AlertCircle className="w-8 h-8 text-amber-400" />
-          <p className="text-sm text-slate-200">Unable to load PowerSim visualizer canvas</p>
+          <p className="text-sm text-slate-200">Unable to load DC-AC Basic visualizer canvas</p>
           <p className="text-xs text-slate-400 font-mono">Attempted: {powerSimUrl}</p>
           <div className="flex items-center gap-2 mt-2">
             <button
@@ -92,7 +92,7 @@ export default function PowerSimApp({ activeAppId = 'powersim', onSelectApp }: P
       <iframe
         key={iframeKey}
         src={powerSimUrl}
-        title="PowerSim Interactive Inverter Visualizer"
+        title="DC-AC Basic Interactive Inverter Visualizer"
         className="w-full flex-1 border-0 h-full bg-[#090B0E]"
         onLoad={() => setIsLoading(false)}
         onError={() => {
