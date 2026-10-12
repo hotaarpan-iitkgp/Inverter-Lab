@@ -582,20 +582,46 @@
         <div id="scope-card" class="bg-[#151619] border border-[#2A2D33] rounded-lg overflow-hidden flex flex-col shadow-lg flex-1 min-h-0">
           <div class="px-2.5 py-1 border-b border-[#2A2D33] bg-[#151619] flex flex-wrap items-center justify-between gap-1.5 text-xs shrink-0">
             <div class="flex items-center flex-wrap gap-2">
-              <span class="font-semibold text-[#E0E0E6] text-[11px]">Synchronized Oscilloscope</span>
+              <span class="font-semibold text-[#E0E0E6] text-[11px]" id="scope-title-label">Synchronized Oscilloscope</span>
               
-              <!-- Scope Display Mode Segmented Control: Combined vs Subplots -->
+              <!-- Scope Display Mode Segmented Control: Combined vs Subplots vs FFT Plot -->
               <div class="flex items-center bg-[#1F2228] border border-[#2A2D33] rounded p-0.5 text-[10px] font-mono">
-                <button type="button" id="btn-mode-combined" class="segmented-btn active">
+                <button type="button" id="btn-mode-combined" class="segmented-btn active" title="Combined Overlay Waveforms">
                   Combined
                 </button>
-                <button type="button" id="btn-mode-subplots" class="segmented-btn">
+                <button type="button" id="btn-mode-subplots" class="segmented-btn" title="Separate Subplots per Channel">
                   Subplots
+                </button>
+                <button type="button" id="btn-mode-fft" class="segmented-btn" title="FFT Harmonic Frequency Spectrum">
+                  FFT Plot
                 </button>
               </div>
 
+              <!-- FFT Specific Parametric Controls (Visible when FFT Plot is active) -->
+              <div id="fft-toolbar-controls" class="hidden flex items-center flex-wrap gap-1.5 text-[10px] font-mono">
+                <!-- Orders Slider & Value -->
+                <div class="flex items-center gap-1.5 bg-[#1F2228] border border-[#2A2D33] rounded px-2 py-0.5" title="Harmonic orders to display (max 5× switching frequency)">
+                  <span class="text-[#8E9299]">Orders:</span>
+                  <input type="range" id="fft-orders-slider" min="5" max="75" step="1" value="30" class="custom-slider w-16 sm:w-24 cursor-pointer">
+                  <span id="fft-orders-val" class="text-[#00FF9C] font-bold min-w-[24px] text-center">30</span>
+                </div>
+
+                <!-- Quick Presets for Multiples of Switching Frequency -->
+                <div class="flex items-center bg-[#1F2228] border border-[#2A2D33] rounded p-0.5">
+                  <button type="button" id="btn-fft-preset-1x" class="segmented-btn px-1.5 py-0.5 text-[9px]" title="1× Switching Frequency">1× f_sw</button>
+                  <button type="button" id="btn-fft-preset-2x" class="segmented-btn px-1.5 py-0.5 text-[9px]" title="2× Switching Frequency">2× f_sw</button>
+                  <button type="button" id="btn-fft-preset-5x" class="segmented-btn px-1.5 py-0.5 text-[9px]" title="5× Switching Frequency (Max Allowed)">5× f_sw (Max)</button>
+                </div>
+
+                <!-- Y-Axis Mode: % of Fundamental vs Absolute RMS -->
+                <div class="flex items-center bg-[#1F2228] border border-[#2A2D33] rounded p-0.5" title="Harmonic amplitude scale">
+                  <button type="button" id="btn-fft-unit-pct" class="segmented-btn active px-1.5 py-0.5 text-[9px]">% Fund</button>
+                  <button type="button" id="btn-fft-unit-rms" class="segmented-btn px-1.5 py-0.5 text-[9px]">RMS</button>
+                </div>
+              </div>
+
               <!-- Height Presets: Fit (Auto) / Compact 240px / Expanded 360px -->
-              <div class="flex items-center bg-[#1F2228] border border-[#2A2D33] rounded p-0.5 text-[10px] font-mono">
+              <div id="scope-height-controls" class="flex items-center bg-[#1F2228] border border-[#2A2D33] rounded p-0.5 text-[10px] font-mono">
                 <span class="text-[#8E9299] px-1 text-[9px]">HEIGHT:</span>
                 <button type="button" id="btn-h-auto" class="segmented-btn active" title="Fit Available Vertical Screen Height">Fit (Auto)</button>
                 <button type="button" id="btn-h-compact" class="segmented-btn" title="240px Compact Height">240px</button>
@@ -611,19 +637,19 @@
                   <option value="v_AB">v_AB,BC,CA (Line)</option>
                   <option value="v_AO">v_AO,BO,CO (Pole)</option>
                 </select>
-                <label class="flex items-center gap-1 cursor-pointer text-[#FACC15] font-mono text-[10px]">
+                <label id="lbl-ch1" class="flex items-center gap-1 cursor-pointer text-[#FACC15] font-mono text-[10px]">
                   <input type="checkbox" id="chk-ch1" checked class="rounded bg-[#1F2228] border-[#2A2D33]"> Ref
                 </label>
-                <label class="flex items-center gap-1 cursor-pointer text-[#3B82F6] font-mono text-[10px]">
+                <label id="lbl-ch2" class="flex items-center gap-1 cursor-pointer text-[#3B82F6] font-mono text-[10px]">
                   <input type="checkbox" id="chk-ch2" checked class="rounded bg-[#1F2228] border-[#2A2D33]"> v(t)
                 </label>
-                <label class="flex items-center gap-1 cursor-pointer text-[#00FF9C] font-mono text-[10px]">
+                <label id="lbl-ch3" class="flex items-center gap-1 cursor-pointer text-[#00FF9C] font-mono text-[10px]">
                   <input type="checkbox" id="chk-ch3" checked class="rounded bg-[#1F2228] border-[#2A2D33]"> i(t)
                 </label>
-                <label class="flex items-center gap-1 cursor-pointer text-[#C084FC] font-mono text-[10px]">
+                <label id="lbl-ch4" class="flex items-center gap-1 cursor-pointer text-[#C084FC] font-mono text-[10px]">
                   <input type="checkbox" id="chk-ch4" class="rounded bg-[#1F2228] border-[#2A2D33]"> Gates
                 </label>
-                <label class="flex items-center gap-1 cursor-pointer text-[#FB923C] font-mono text-[10px]">
+                <label id="lbl-ch5" class="flex items-center gap-1 cursor-pointer text-[#FB923C] font-mono text-[10px]">
                   <input type="checkbox" id="chk-ch5" class="rounded bg-[#1F2228] border-[#2A2D33]"> i_dc
                 </label>
               </div>
@@ -638,17 +664,43 @@
           <!-- Scope Canvas Container (Dynamically fills vertical viewport) -->
           <div class="relative w-full flex-1 min-h-[160px] scope-track p-0.5" id="scope-container">
             <canvas id="scope-canvas" class="w-full h-full block cursor-ew-resize"></canvas>
-            <div class="absolute top-1.5 right-2.5 text-[9px] text-[#8E9299] pointer-events-none font-mono opacity-60">
+            <div id="scope-canvas-hint" class="absolute top-1.5 right-2.5 text-[9px] text-[#8E9299] pointer-events-none font-mono opacity-60">
               Click/drag anywhere to scrub θ
             </div>
           </div>
 
-          <!-- Scrubbing Slider Bar -->
-          <div class="px-2.5 py-1 border-t border-[#2A2D33] bg-[#151619] flex items-center gap-2 text-xs shrink-0">
+          <!-- Time Domain Scrubbing Slider Bar -->
+          <div id="scope-scrubber-bar" class="px-2.5 py-1 border-t border-[#2A2D33] bg-[#151619] flex items-center gap-2 text-xs shrink-0">
             <span class="text-[#8E9299] font-mono text-[10px]" id="scrubber-min-label">0°</span>
             <input type="range" id="time-scrubber" min="0" max="360" step="0.5" value="0" class="custom-slider flex-1">
             <span class="text-[#8E9299] font-mono text-[10px]" id="scrubber-max-label">360°</span>
             <span class="text-[#00FF9C] font-mono font-bold text-[11px] min-w-14 text-right" id="scrubber-label">0.0°</span>
+          </div>
+
+          <!-- FFT Status & Hover Inspection Bar -->
+          <div id="scope-fft-status-bar" class="hidden px-2.5 py-1 border-t border-[#2A2D33] bg-[#151619] flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 font-mono">
+            <div class="flex items-center flex-wrap gap-2 text-[10px]">
+              <span class="text-[#E0E0E6] flex items-center gap-1 font-semibold">
+                <span class="w-2 h-2 rounded-full bg-[#38BDF8]"></span>
+                <span>V₁:</span>
+                <span id="fft-status-v1" class="text-[#38BDF8] font-bold">-- V</span>
+                <span class="text-[#8E9299] text-[9px]">(THD: <span id="fft-status-thdv" class="text-white font-semibold">--%</span>)</span>
+              </span>
+              <span class="text-[#8E9299]">·</span>
+              <span class="text-[#E0E0E6] flex items-center gap-1 font-semibold">
+                <span class="w-2 h-2 rounded-full bg-[#00FF9C]"></span>
+                <span>I₁:</span>
+                <span id="fft-status-i1" class="text-[#00FF9C] font-bold">-- A</span>
+                <span class="text-[#8E9299] text-[9px]">(THD: <span id="fft-status-thdi" class="text-white font-semibold">--%</span>)</span>
+              </span>
+              <span class="text-[#8E9299]">·</span>
+              <span class="text-[#8E9299] text-[10px]">
+                f_sw: <span id="fft-status-fsw" class="text-[#FACC15] font-semibold">-- Hz</span>
+              </span>
+            </div>
+            <div id="fft-status-hover" class="text-[10px] text-[#A0A5B0]">
+              Hover over bars to inspect harmonic orders &amp; magnitudes
+            </div>
           </div>
         </div>
       </div>
@@ -875,7 +927,11 @@
         simSpeed: 0.001,
         theta: 0, // In degrees (0 to 360 * cycles)
         cycles: 1, // 1 period (360°) or 2 periods (720°)
-        scopeMode: 'combined', // 'combined' or 'subplots'
+        scopeMode: 'combined', // 'combined', 'subplots', or 'fft'
+        fftOrders: 30, // Number of harmonic orders to display (max 5× switching frequency)
+        fftUnit: 'pct', // 'pct' (% of fundamental) or 'rms' (Absolute RMS)
+        fftHoveredHarmonic: null, // order number of currently hovered harmonic
+        fftCache: null,
         
         // Parameters
         vdc: 200,      // Volts (or Idc for CSI)
@@ -951,10 +1007,31 @@
         // Scope Display Mode & Height Buttons
         btnModeCombined: document.getElementById('btn-mode-combined'),
         btnModeSubplots: document.getElementById('btn-mode-subplots'),
+        btnModeFft: document.getElementById('btn-mode-fft'),
         btnHAuto: document.getElementById('btn-h-auto'),
         btnHCompact: document.getElementById('btn-h-compact'),
         btnHTall: document.getElementById('btn-h-tall'),
+        scopeHeightControls: document.getElementById('scope-height-controls'),
         scopeContainer: document.getElementById('scope-container'),
+
+        // FFT Controls
+        fftToolbarControls: document.getElementById('fft-toolbar-controls'),
+        fftOrdersSlider: document.getElementById('fft-orders-slider'),
+        fftOrdersVal: document.getElementById('fft-orders-val'),
+        btnFftPreset1x: document.getElementById('btn-fft-preset-1x'),
+        btnFftPreset2x: document.getElementById('btn-fft-preset-2x'),
+        btnFftPreset5x: document.getElementById('btn-fft-preset-5x'),
+        btnFftUnitPct: document.getElementById('btn-fft-unit-pct'),
+        btnFftUnitRms: document.getElementById('btn-fft-unit-rms'),
+        scopeScrubberBar: document.getElementById('scope-scrubber-bar'),
+        scopeFftStatusBar: document.getElementById('scope-fft-status-bar'),
+        fftStatusV1: document.getElementById('fft-status-v1'),
+        fftStatusThdV: document.getElementById('fft-status-thdv'),
+        fftStatusI1: document.getElementById('fft-status-i1'),
+        fftStatusThdI: document.getElementById('fft-status-thdi'),
+        fftStatusFsw: document.getElementById('fft-status-fsw'),
+        fftStatusHover: document.getElementById('fft-status-hover'),
+        scopeCanvasHint: document.getElementById('scope-canvas-hint'),
 
         // Param Inputs
         paramDcSource: document.getElementById('param-dc-source'),
@@ -1015,6 +1092,11 @@
         chkCh3: document.getElementById('chk-ch3'),
         chkCh4: document.getElementById('chk-ch4'),
         chkCh5: document.getElementById('chk-ch5'),
+        lblCh1: document.getElementById('lbl-ch1'),
+        lblCh2: document.getElementById('lbl-ch2'),
+        lblCh3: document.getElementById('lbl-ch3'),
+        lblCh4: document.getElementById('lbl-ch4'),
+        lblCh5: document.getElementById('lbl-ch5'),
 
         // Canvases
         schematicCanvas: document.getElementById('schematic-canvas'),
@@ -1144,12 +1226,52 @@
           'csi': 'Single-Phase Current Source Inverter (CSI)'
         };
         dom.schematicTitle.textContent = topoNames[state.topology];
+        updateFftControlsState();
+      }
+
+      // Maximum harmonic orders allowed: Max 5 times switching frequency for PWM, or 50 for non-PWM
+      function getMaxHarmonicOrders() {
+        if (state.mode && state.mode.includes('spwm')) {
+          const mf = Math.max(3, parseInt(state.mf, 10));
+          return 5 * mf;
+        }
+        return 50;
+      }
+
+      function updateFftControlsState() {
+        const maxH = getMaxHarmonicOrders();
+        if (dom.fftOrdersSlider) {
+          dom.fftOrdersSlider.max = maxH.toString();
+          if (state.fftOrders > maxH) {
+            state.fftOrders = maxH;
+          }
+          if (state.fftOrders < 5) {
+            state.fftOrders = Math.min(5, maxH);
+          }
+          dom.fftOrdersSlider.value = state.fftOrders.toString();
+          if (dom.fftOrdersVal) {
+            dom.fftOrdersVal.textContent = state.fftOrders.toString();
+          }
+        }
+
+        const isPWM = state.mode && state.mode.includes('spwm');
+        if (isPWM) {
+          const mf = Math.max(3, parseInt(state.mf, 10));
+          if (dom.btnFftPreset1x) dom.btnFftPreset1x.textContent = `1× (h=${mf})`;
+          if (dom.btnFftPreset2x) dom.btnFftPreset2x.textContent = `2× (h=${2*mf})`;
+          if (dom.btnFftPreset5x) dom.btnFftPreset5x.textContent = `5× (h=${5*mf})`;
+        } else {
+          if (dom.btnFftPreset1x) dom.btnFftPreset1x.textContent = 'h=15';
+          if (dom.btnFftPreset2x) dom.btnFftPreset2x.textContent = 'h=30';
+          if (dom.btnFftPreset5x) dom.btnFftPreset5x.textContent = 'h=50 (Max)';
+        }
       }
 
       // ==========================================
       // MATHEMATICAL WAVEFORM SOLVER (1 or 2 Switching Periods)
       // ==========================================
       function recalculateWaveforms() {
+        state.fftCache = null; // Invalidate FFT cache when parameters change
         const cycles = state.cycles || 1;
         const totalDeg = 360 * cycles;
         const N = state.samples * cycles;
@@ -2728,14 +2850,436 @@
       }
 
       // ==========================================
-      // OSCILLOSCOPE DRAWING & RENDERING (COMBINED & SUBPLOTS)
+      // DISCRETE FOURIER TRANSFORM / FFT HARMONIC ENGINE
+      // ==========================================
+      function computeSignalHarmonics(signalArray, N1, f0, maxH) {
+        if (!signalArray || signalArray.length < N1) return null;
+        const harmonics = [];
+        let fundPeak = 0;
+        let fundRms = 0;
+        let harmEnergySum = 0;
+
+        for (let h = 1; h <= maxH; h++) {
+          let sumCos = 0;
+          let sumSin = 0;
+          const factor = (2 * Math.PI * h) / N1;
+          for (let n = 0; n < N1; n++) {
+            const angle = factor * n;
+            sumCos += signalArray[n] * Math.cos(angle);
+            sumSin += signalArray[n] * Math.sin(angle);
+          }
+          const a_h = (2 / N1) * sumCos;
+          const b_h = (2 / N1) * sumSin;
+          const peak = Math.sqrt(a_h * a_h + b_h * b_h);
+          const rms = peak / Math.SQRT2;
+          const phaseDeg = (Math.atan2(-b_h, a_h) * 180) / Math.PI;
+
+          if (h === 1) {
+            fundPeak = Math.max(1e-6, peak);
+            fundRms = rms;
+            harmonics.push({
+              h: 1,
+              freq: f0,
+              peak,
+              rms,
+              pct: 100,
+              phaseDeg
+            });
+          } else {
+            harmEnergySum += rms * rms;
+            const pct = (peak / fundPeak) * 100;
+            harmonics.push({
+              h,
+              freq: h * f0,
+              peak,
+              rms,
+              pct,
+              phaseDeg
+            });
+          }
+        }
+
+        const thd = fundRms > 1e-4 ? (Math.sqrt(harmEnergySum) / fundRms) * 100 : 0;
+        return { harmonics, fundRms, fundPeak, thd };
+      }
+
+      function renderScopeFFT(w, h) {
+        const padLeft = 48;
+        const padRight = 16;
+        const padTop = 26;
+        const padBottom = 34;
+        const plotW = w - padLeft - padRight;
+        const plotH = h - padTop - padBottom;
+        if (plotW <= 10 || plotH <= 10) return;
+
+        const maxH = Math.max(5, Math.min(state.fftOrders || 30, getMaxHarmonicOrders()));
+        const wf = state.waveforms;
+        if (!wf || !wf.t || wf.t.length === 0) return;
+
+        let vSignal = wf.v_out;
+        let vLabel = 'v_out';
+        if (state.topology === 'three-phase') {
+          const mode = dom.scope3phView ? dom.scope3phView.value : 'v_AN';
+          if (mode === 'v_AB') {
+            vSignal = wf.v_AB;
+            vLabel = 'v_AB (Line)';
+          } else if (mode === 'v_AO') {
+            vSignal = wf.v_AO;
+            vLabel = 'v_AO (Pole)';
+          } else {
+            vSignal = wf.v_AN;
+            vLabel = 'v_AN (Phase)';
+          }
+        }
+
+        const iSignal = wf.i_out;
+        const iLabel = state.topology === 'three-phase' ? 'i_A (Phase)' : 'i_out';
+
+        const showV = dom.chkCh2 ? dom.chkCh2.checked : true;
+        const showI = dom.chkCh3 ? dom.chkCh3.checked : true;
+        const bothActive = showV && showI;
+
+        // Compute or retrieve cached FFT
+        const N1 = state.samples || 1000;
+        const cacheKey = `${state.topology}_${state.mode}_${state.vdc}_${state.idc}_${state.fo}_${state.ma}_${state.mf}_${state.sigma}_${state.R}_${state.L}_${state.C}_${dom.scope3phView ? dom.scope3phView.value : ''}_${maxH}`;
+        if (!state.fftCache || state.fftCache.key !== cacheKey) {
+          const vHarm = computeSignalHarmonics(vSignal, N1, state.fo, maxH);
+          const iHarm = computeSignalHarmonics(iSignal, N1, state.fo, maxH);
+          state.fftCache = { key: cacheKey, vHarm, iHarm, maxH };
+        }
+
+        const vHarm = state.fftCache.vHarm;
+        const iHarm = state.fftCache.iHarm;
+
+        // Update Status Bar
+        if (vHarm && dom.fftStatusV1) {
+          dom.fftStatusV1.textContent = `${vHarm.fundRms.toFixed(1)} V`;
+          if (dom.fftStatusThdV) dom.fftStatusThdV.textContent = `${vHarm.thd.toFixed(1)}%`;
+        }
+        if (iHarm && dom.fftStatusI1) {
+          dom.fftStatusI1.textContent = `${iHarm.fundRms.toFixed(2)} A`;
+          if (dom.fftStatusThdI) dom.fftStatusThdI.textContent = `${iHarm.thd.toFixed(1)}%`;
+        }
+        if (dom.fftStatusFsw) {
+          if (state.mode && state.mode.includes('spwm')) {
+            dom.fftStatusFsw.textContent = `${(state.mf * state.fo).toFixed(0)} Hz (Order ${state.mf})`;
+          } else {
+            dom.fftStatusFsw.textContent = `${state.fo.toFixed(0)} Hz (Fund)`;
+          }
+        }
+
+        // Determine Y Scale
+        const isPct = (state.fftUnit !== 'rms');
+        let yMax = 120;
+        if (isPct) {
+          let maxPctFound = 100;
+          if (showV && vHarm) {
+            vHarm.harmonics.forEach(item => { if (item.pct > maxPctFound) maxPctFound = item.pct; });
+          }
+          if (showI && iHarm) {
+            iHarm.harmonics.forEach(item => { if (item.pct > maxPctFound) maxPctFound = item.pct; });
+          }
+          yMax = Math.max(110, Math.ceil(maxPctFound * 1.15 / 10) * 10);
+        } else {
+          let maxRmsFound = 1;
+          if (showV && vHarm) {
+            vHarm.harmonics.forEach(item => { if (item.rms > maxRmsFound) maxRmsFound = item.rms; });
+          }
+          if (showI && iHarm) {
+            iHarm.harmonics.forEach(item => { if (item.rms > maxRmsFound) maxRmsFound = item.rms; });
+          }
+          yMax = Math.max(1, maxRmsFound * 1.2);
+        }
+
+        oCtx.save();
+
+        // Background subtle grid
+        const numRows = 5;
+        oCtx.strokeStyle = '#1e293b';
+        oCtx.lineWidth = 1;
+
+        for (let r = 0; r <= numRows; r++) {
+          const yVal = (r / numRows) * yMax;
+          const y = padTop + plotH - (r / numRows) * plotH;
+
+          oCtx.beginPath();
+          oCtx.moveTo(padLeft, y);
+          oCtx.lineTo(padLeft + plotW, y);
+          oCtx.stroke();
+
+          // Axis label
+          oCtx.font = '500 10px "JetBrains Mono", monospace';
+          oCtx.fillStyle = '#64748B';
+          oCtx.textAlign = 'right';
+          oCtx.textBaseline = 'middle';
+          if (isPct) {
+            oCtx.fillText(`${Math.round(yVal)}%`, padLeft - 6, y);
+          } else {
+            oCtx.fillText(`${yVal.toFixed(yVal >= 10 ? 0 : 1)}`, padLeft - 6, y);
+          }
+        }
+
+        // Base X Axis
+        oCtx.strokeStyle = '#334155';
+        oCtx.lineWidth = 1.5;
+        oCtx.beginPath();
+        oCtx.moveTo(padLeft, padTop + plotH);
+        oCtx.lineTo(padLeft + plotW, padTop + plotH);
+        oCtx.stroke();
+
+        // Switching Carrier Guideline (if PWM mode)
+        if (state.mode && state.mode.includes('spwm')) {
+          const mf = Math.max(3, parseInt(state.mf, 10));
+          if (mf <= maxH) {
+            const cX = padLeft + ((mf - 0.5) / maxH) * plotW;
+            oCtx.strokeStyle = 'rgba(250, 204, 21, 0.45)';
+            oCtx.lineWidth = 1.2;
+            oCtx.setLineDash([3, 3]);
+            oCtx.beginPath();
+            oCtx.moveTo(cX, padTop);
+            oCtx.lineTo(cX, padTop + plotH);
+            oCtx.stroke();
+            oCtx.setLineDash([]);
+
+            oCtx.font = '600 9px "JetBrains Mono", monospace';
+            oCtx.fillStyle = '#FACC15';
+            oCtx.textAlign = 'center';
+            oCtx.fillText(`f_sw (${mf})`, cX, padTop - 5);
+          }
+          if (2 * mf <= maxH) {
+            const c2X = padLeft + ((2 * mf - 0.5) / maxH) * plotW;
+            oCtx.strokeStyle = 'rgba(250, 204, 21, 0.25)';
+            oCtx.lineWidth = 1;
+            oCtx.setLineDash([3, 3]);
+            oCtx.beginPath();
+            oCtx.moveTo(c2X, padTop);
+            oCtx.lineTo(c2X, padTop + plotH);
+            oCtx.stroke();
+            oCtx.setLineDash([]);
+
+            oCtx.font = '500 8.5px "JetBrains Mono", monospace';
+            oCtx.fillStyle = 'rgba(250, 204, 21, 0.7)';
+            oCtx.textAlign = 'center';
+            oCtx.fillText(`2·f_sw`, c2X, padTop - 5);
+          }
+        }
+
+        // Draw Bars
+        const slotW = plotW / maxH;
+        let barW = Math.max(2, Math.min(18, slotW * 0.7));
+        if (bothActive) {
+          barW = Math.max(1.5, Math.min(8, (slotW * 0.75) / 2));
+        }
+
+        const hoveredH = state.fftHoveredHarmonic;
+
+        for (let h = 1; h <= maxH; h++) {
+          const slotCenterX = padLeft + (h - 0.5) * slotW;
+          const isHovered = (hoveredH === h);
+
+          if (isHovered) {
+            oCtx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+            oCtx.fillRect(slotCenterX - slotW / 2, padTop, slotW, plotH);
+          }
+
+          const vItem = vHarm && vHarm.harmonics ? vHarm.harmonics[h - 1] : null;
+          const iItem = iHarm && iHarm.harmonics ? iHarm.harmonics[h - 1] : null;
+
+          if (bothActive) {
+            // Voltage (Sky Blue)
+            if (vItem) {
+              const vVal = isPct ? vItem.pct : vItem.rms;
+              const bH = Math.max(0, (vVal / yMax) * plotH);
+              const bX = slotCenterX - barW - 0.5;
+              const bY = padTop + plotH - bH;
+
+              oCtx.fillStyle = isHovered ? '#7DD3FC' : (h === 1 ? '#38BDF8' : '#0284C7');
+              oCtx.fillRect(bX, bY, barW, bH);
+              if (isHovered) {
+                oCtx.strokeStyle = '#FFFFFF';
+                oCtx.lineWidth = 1;
+                oCtx.strokeRect(bX, bY, barW, bH);
+              }
+            }
+
+            // Current (Emerald Green)
+            if (iItem) {
+              const iVal = isPct ? iItem.pct : iItem.rms;
+              const bH = Math.max(0, (iVal / yMax) * plotH);
+              const bX = slotCenterX + 0.5;
+              const bY = padTop + plotH - bH;
+
+              oCtx.fillStyle = isHovered ? '#6EE7B7' : (h === 1 ? '#00FF9C' : '#059669');
+              oCtx.fillRect(bX, bY, barW, bH);
+              if (isHovered) {
+                oCtx.strokeStyle = '#FFFFFF';
+                oCtx.lineWidth = 1;
+                oCtx.strokeRect(bX, bY, barW, bH);
+              }
+            }
+          } else if (showV && vItem) {
+            const vVal = isPct ? vItem.pct : vItem.rms;
+            const bH = Math.max(0, (vVal / yMax) * plotH);
+            const bX = slotCenterX - barW / 2;
+            const bY = padTop + plotH - bH;
+
+            oCtx.fillStyle = isHovered ? '#7DD3FC' : (h === 1 ? '#38BDF8' : '#0284C7');
+            oCtx.fillRect(bX, bY, barW, bH);
+            if (isHovered) {
+              oCtx.strokeStyle = '#FFFFFF';
+              oCtx.lineWidth = 1;
+              oCtx.strokeRect(bX, bY, barW, bH);
+            }
+          } else if (showI && iItem) {
+            const iVal = isPct ? iItem.pct : iItem.rms;
+            const bH = Math.max(0, (iVal / yMax) * plotH);
+            const bX = slotCenterX - barW / 2;
+            const bY = padTop + plotH - bH;
+
+            oCtx.fillStyle = isHovered ? '#6EE7B7' : (h === 1 ? '#00FF9C' : '#059669');
+            oCtx.fillRect(bX, bY, barW, bH);
+            if (isHovered) {
+              oCtx.strokeStyle = '#FFFFFF';
+              oCtx.lineWidth = 1;
+              oCtx.strokeRect(bX, bY, barW, bH);
+            }
+          }
+
+          // X-Axis Order Number Labels
+          let shouldLabel = false;
+          if (maxH <= 20) {
+            shouldLabel = true;
+          } else if (maxH <= 40) {
+            shouldLabel = (h % 2 === 1) || (h === 1) || (h === state.mf);
+          } else if (maxH <= 80) {
+            shouldLabel = (h % 5 === 0) || (h === 1) || (h === state.mf);
+          } else if (maxH <= 150) {
+            shouldLabel = (h % 10 === 0) || (h === 1) || (h === state.mf);
+          } else {
+            shouldLabel = (h % 20 === 0) || (h === 1) || (h === state.mf);
+          }
+
+          if (shouldLabel || isHovered) {
+            oCtx.font = (isHovered || h === 1 || h === state.mf) ? '600 9px "JetBrains Mono", monospace' : '500 8px "JetBrains Mono", monospace';
+            oCtx.fillStyle = isHovered ? '#F8FAFC' : (h === 1 ? '#38BDF8' : (h === state.mf ? '#FACC15' : '#94A3B8'));
+            oCtx.textAlign = 'center';
+            oCtx.textBaseline = 'top';
+            oCtx.fillText(`${h}`, slotCenterX, padTop + plotH + 4);
+
+            if (h === 1 || h === state.mf || (h % 10 === 0 && maxH > 20)) {
+              const freqHz = h * state.fo;
+              const fStr = freqHz >= 1000 ? `${(freqHz / 1000).toFixed(1)}k` : `${freqHz}`;
+              oCtx.font = '400 7.5px "JetBrains Mono", monospace';
+              oCtx.fillStyle = '#64748B';
+              oCtx.fillText(fStr, slotCenterX, padTop + plotH + 16);
+            }
+          }
+        }
+
+        // Top Legend
+        oCtx.textAlign = 'left';
+        oCtx.textBaseline = 'top';
+        oCtx.font = '600 10px "JetBrains Mono", monospace';
+
+        let legendX = padLeft + 4;
+        if (showV) {
+          oCtx.fillStyle = '#38BDF8';
+          oCtx.fillRect(legendX, padTop - 18, 8, 8);
+          oCtx.fillText(bothActive ? `${vLabel} (% V₁)` : `${vLabel}`, legendX + 12, padTop - 20);
+          legendX += bothActive ? 140 : 100;
+        }
+        if (showI) {
+          oCtx.fillStyle = '#00FF9C';
+          oCtx.fillRect(legendX, padTop - 18, 8, 8);
+          oCtx.fillText(bothActive ? `${iLabel} (% I₁)` : `${iLabel}`, legendX + 12, padTop - 20);
+          legendX += 120;
+        }
+
+        // Unit indicator
+        oCtx.textAlign = 'right';
+        oCtx.font = '500 9px "JetBrains Mono", monospace';
+        oCtx.fillStyle = '#94A3B8';
+        oCtx.fillText(isPct ? `Scale: % of Fundamental (Orders: 1 to ${maxH})` : `Scale: RMS Magnitude (Orders: 1 to ${maxH})`, padLeft + plotW, padTop - 18);
+
+        // Tooltip on Hover
+        if (hoveredH && hoveredH <= maxH) {
+          const slotCenterX = padLeft + (hoveredH - 0.5) * slotW;
+          const vItem = vHarm && vHarm.harmonics ? vHarm.harmonics[hoveredH - 1] : null;
+          const iItem = iHarm && iHarm.harmonics ? iHarm.harmonics[hoveredH - 1] : null;
+          const freqHz = hoveredH * state.fo;
+
+          const tipW = 190;
+          const tipH = 72;
+          let tipX = slotCenterX + 12;
+          if (tipX + tipW > w - 10) tipX = slotCenterX - tipW - 12;
+          let tipY = padTop + 12;
+
+          oCtx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+          oCtx.strokeStyle = '#334155';
+          oCtx.lineWidth = 1;
+          oCtx.beginPath();
+          oCtx.roundRect(tipX, tipY, tipW, tipH, 6);
+          oCtx.fill();
+          oCtx.stroke();
+
+          // Title
+          oCtx.textAlign = 'left';
+          oCtx.textBaseline = 'top';
+          oCtx.font = '700 10px "JetBrains Mono", monospace';
+          oCtx.fillStyle = '#F8FAFC';
+          oCtx.fillText(`Order h = ${hoveredH} (${freqHz.toFixed(1)} Hz)`, tipX + 8, tipY + 7);
+
+          // Classification
+          let tag = '';
+          if (hoveredH === 1) tag = 'Fundamental (h₁)';
+          else if (state.mode && state.mode.includes('spwm') && hoveredH === state.mf) tag = 'Carrier Frequency (f_sw)';
+          else if (state.mode && state.mode.includes('spwm') && (hoveredH === state.mf - 2 || hoveredH === state.mf + 2)) tag = 'Carrier Sideband';
+          else if (state.mode && state.mode.includes('spwm') && hoveredH === 2 * state.mf) tag = '2nd Carrier Harmonic';
+          else if (hoveredH % 3 === 0) tag = 'Triplen Harmonic';
+          else if (hoveredH % 2 === 1) tag = 'Odd Harmonic';
+          else tag = 'Even Harmonic';
+
+          oCtx.font = '500 8.5px "JetBrains Mono", monospace';
+          oCtx.fillStyle = '#FACC15';
+          oCtx.fillText(tag, tipX + 8, tipY + 20);
+
+          // Values
+          oCtx.font = '500 9px "JetBrains Mono", monospace';
+          if (vItem) {
+            oCtx.fillStyle = '#38BDF8';
+            oCtx.fillText(`V: ${vItem.rms.toFixed(1)} V RMS (${vItem.pct.toFixed(1)}%)`, tipX + 8, tipY + 36);
+          }
+          if (iItem) {
+            oCtx.fillStyle = '#00FF9C';
+            oCtx.fillText(`I: ${iItem.rms.toFixed(2)} A RMS (${iItem.pct.toFixed(1)}%)`, tipX + 8, tipY + 52);
+          }
+
+          if (dom.fftStatusHover) {
+            dom.fftStatusHover.innerHTML = `<span class="text-white font-bold">h=${hoveredH}</span> (${freqHz.toFixed(0)} Hz): ` +
+              (vItem ? `<span class="text-[#38BDF8]">V=${vItem.rms.toFixed(1)}V (${vItem.pct.toFixed(1)}%)</span> ` : '') +
+              (iItem ? `<span class="text-[#00FF9C]">I=${iItem.rms.toFixed(2)}A (${iItem.pct.toFixed(1)}%)</span> ` : '') +
+              `<span class="text-[#FACC15] text-[9px]">[${tag}]</span>`;
+          }
+        } else {
+          if (dom.fftStatusHover) {
+            dom.fftStatusHover.textContent = 'Hover over harmonic bars to inspect frequency & magnitude';
+          }
+        }
+
+        oCtx.restore();
+      }
+
+      // ==========================================
+      // OSCILLOSCOPE DRAWING & RENDERING (COMBINED, SUBPLOTS & FFT)
       // ==========================================
       function renderScope() {
         const w = dom.scopeCanvas.parentElement.clientWidth;
         const h = dom.scopeCanvas.parentElement.clientHeight;
         oCtx.clearRect(0, 0, w, h);
 
-        if (state.scopeMode === 'subplots') {
+        if (state.scopeMode === 'fft') {
+          renderScopeFFT(w, h);
+        } else if (state.scopeMode === 'subplots') {
           renderScopeSubplots(w, h);
         } else {
           renderScopeCombined(w, h);
@@ -3490,21 +4034,106 @@
       if (dom.btnCycle1) dom.btnCycle1.addEventListener('click', () => setPeriodCycles(1));
       if (dom.btnCycle2) dom.btnCycle2.addEventListener('click', () => setPeriodCycles(2));
 
-      // Scope Display Mode (Combined Overlay vs Subplots)
+      // Scope Display Mode (Combined Overlay vs Subplots vs FFT Plot)
       function setScopeMode(mode) {
         state.scopeMode = mode;
+        [dom.btnModeCombined, dom.btnModeSubplots, dom.btnModeFft].forEach(b => {
+          if (b) b.classList.remove('active');
+        });
+
         if (mode === 'combined') {
-          dom.btnModeCombined.classList.add('active');
-          dom.btnModeSubplots.classList.remove('active');
-        } else {
-          dom.btnModeSubplots.classList.add('active');
-          dom.btnModeCombined.classList.remove('active');
+          if (dom.btnModeCombined) dom.btnModeCombined.classList.add('active');
+          if (dom.fftToolbarControls) dom.fftToolbarControls.classList.add('hidden');
+          if (dom.scopeHeightControls) dom.scopeHeightControls.classList.remove('hidden');
+          if (dom.scopeScrubberBar) dom.scopeScrubberBar.classList.remove('hidden');
+          if (dom.scopeFftStatusBar) dom.scopeFftStatusBar.classList.add('hidden');
+          if (dom.scopeCanvasHint) dom.scopeCanvasHint.textContent = 'Click/drag anywhere to scrub θ';
+          [dom.lblCh1, dom.lblCh4, dom.lblCh5].forEach(l => {
+            if (l) l.classList.remove('opacity-30', 'pointer-events-none');
+          });
+        } else if (mode === 'subplots') {
+          if (dom.btnModeSubplots) dom.btnModeSubplots.classList.add('active');
+          if (dom.fftToolbarControls) dom.fftToolbarControls.classList.add('hidden');
+          if (dom.scopeHeightControls) dom.scopeHeightControls.classList.remove('hidden');
+          if (dom.scopeScrubberBar) dom.scopeScrubberBar.classList.remove('hidden');
+          if (dom.scopeFftStatusBar) dom.scopeFftStatusBar.classList.add('hidden');
+          if (dom.scopeCanvasHint) dom.scopeCanvasHint.textContent = 'Click/drag anywhere to scrub θ';
+          [dom.lblCh1, dom.lblCh4, dom.lblCh5].forEach(l => {
+            if (l) l.classList.remove('opacity-30', 'pointer-events-none');
+          });
+        } else if (mode === 'fft') {
+          if (dom.btnModeFft) dom.btnModeFft.classList.add('active');
+          if (dom.fftToolbarControls) dom.fftToolbarControls.classList.remove('hidden');
+          if (dom.scopeHeightControls) dom.scopeHeightControls.classList.add('hidden');
+          if (dom.scopeScrubberBar) dom.scopeScrubberBar.classList.add('hidden');
+          if (dom.scopeFftStatusBar) dom.scopeFftStatusBar.classList.remove('hidden');
+          if (dom.scopeCanvasHint) dom.scopeCanvasHint.textContent = 'Hover over harmonic bars to inspect frequency & magnitude';
+          updateFftControlsState();
+          [dom.lblCh1, dom.lblCh4, dom.lblCh5].forEach(l => {
+            if (l) l.classList.add('opacity-30', 'pointer-events-none');
+          });
         }
         renderScope();
       }
 
       if (dom.btnModeCombined) dom.btnModeCombined.addEventListener('click', () => setScopeMode('combined'));
       if (dom.btnModeSubplots) dom.btnModeSubplots.addEventListener('click', () => setScopeMode('subplots'));
+      if (dom.btnModeFft) dom.btnModeFft.addEventListener('click', () => setScopeMode('fft'));
+
+      // FFT Parameter Controls Listeners
+      if (dom.fftOrdersSlider) {
+        dom.fftOrdersSlider.addEventListener('input', (e) => {
+          state.fftOrders = parseInt(e.target.value, 10);
+          if (dom.fftOrdersVal) dom.fftOrdersVal.textContent = state.fftOrders.toString();
+          renderScope();
+        });
+      }
+
+      if (dom.btnFftPreset1x) {
+        dom.btnFftPreset1x.addEventListener('click', () => {
+          const isPWM = state.mode && state.mode.includes('spwm');
+          const mf = Math.max(3, parseInt(state.mf, 10));
+          state.fftOrders = isPWM ? mf : 15;
+          updateFftControlsState();
+          renderScope();
+        });
+      }
+
+      if (dom.btnFftPreset2x) {
+        dom.btnFftPreset2x.addEventListener('click', () => {
+          const isPWM = state.mode && state.mode.includes('spwm');
+          const mf = Math.max(3, parseInt(state.mf, 10));
+          state.fftOrders = isPWM ? (2 * mf) : 30;
+          updateFftControlsState();
+          renderScope();
+        });
+      }
+
+      if (dom.btnFftPreset5x) {
+        dom.btnFftPreset5x.addEventListener('click', () => {
+          state.fftOrders = getMaxHarmonicOrders();
+          updateFftControlsState();
+          renderScope();
+        });
+      }
+
+      if (dom.btnFftUnitPct) {
+        dom.btnFftUnitPct.addEventListener('click', () => {
+          state.fftUnit = 'pct';
+          dom.btnFftUnitPct.classList.add('active');
+          if (dom.btnFftUnitRms) dom.btnFftUnitRms.classList.remove('active');
+          renderScope();
+        });
+      }
+
+      if (dom.btnFftUnitRms) {
+        dom.btnFftUnitRms.addEventListener('click', () => {
+          state.fftUnit = 'rms';
+          dom.btnFftUnitRms.classList.add('active');
+          if (dom.btnFftUnitPct) dom.btnFftUnitPct.classList.remove('active');
+          renderScope();
+        });
+      }
 
       // Scope Canvas Height Presets (Auto Fit / 240px Compact / 360px Expanded)
       function setScopeHeight(heightPx, btnActive) {
@@ -3589,9 +4218,30 @@
         dom.scrubberLabel.textContent = `${state.theta.toFixed(1)}°`;
       });
 
-      // Interactive Click & Drag Scrubbing directly on Oscilloscope Canvas
+      // Interactive Click & Drag Scrubbing or FFT Bar Inspection on Canvas
+      function handleFftHover(e) {
+        const rect = dom.scopeCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const padLeft = 48;
+        const padRight = 16;
+        const plotW = rect.width - padLeft - padRight;
+        const maxH = Math.max(5, Math.min(state.fftOrders || 30, getMaxHarmonicOrders()));
+        if (x >= padLeft && x <= padLeft + plotW) {
+          const frac = (x - padLeft) / plotW;
+          const h = Math.max(1, Math.min(maxH, Math.floor(frac * maxH) + 1));
+          state.fftHoveredHarmonic = h;
+        } else {
+          state.fftHoveredHarmonic = null;
+        }
+        renderScope();
+      }
+
       let isDraggingScope = false;
       function handleScopeScrub(e) {
+        if (state.scopeMode === 'fft') {
+          handleFftHover(e);
+          return;
+        }
         const rect = dom.scopeCanvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const padLeft = 48;
@@ -3604,12 +4254,23 @@
         dom.timeScrubber.value = state.theta;
         dom.scrubberLabel.textContent = `${state.theta.toFixed(1)}°`;
       }
+
       dom.scopeCanvas.addEventListener('mousedown', (e) => {
         isDraggingScope = true;
         handleScopeScrub(e);
       });
-      window.addEventListener('mousemove', (e) => {
-        if (isDraggingScope) handleScopeScrub(e);
+      dom.scopeCanvas.addEventListener('mousemove', (e) => {
+        if (state.scopeMode === 'fft') {
+          handleFftHover(e);
+        } else if (isDraggingScope) {
+          handleScopeScrub(e);
+        }
+      });
+      dom.scopeCanvas.addEventListener('mouseleave', () => {
+        if (state.scopeMode === 'fft') {
+          state.fftHoveredHarmonic = null;
+          renderScope();
+        }
       });
       window.addEventListener('mouseup', () => {
         isDraggingScope = false;
@@ -3622,13 +4283,17 @@
           handleScopeScrub(e.touches[0]);
         }
       }, { passive: true });
-      window.addEventListener('touchmove', (e) => {
-        if (isDraggingScope && e.touches && e.touches.length > 0) {
+      dom.scopeCanvas.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches.length > 0) {
           handleScopeScrub(e.touches[0]);
         }
       }, { passive: true });
       window.addEventListener('touchend', () => {
         isDraggingScope = false;
+        if (state.scopeMode === 'fft') {
+          state.fftHoveredHarmonic = null;
+          renderScope();
+        }
       });
 
       // Parameter Sliders Listeners
@@ -3658,6 +4323,7 @@
       dom.paramMf.addEventListener('input', (e) => {
         state.mf = parseInt(e.target.value, 10);
         dom.valMf.textContent = state.mf;
+        updateFftControlsState();
         recalculateWaveforms();
       });
 
